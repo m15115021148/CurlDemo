@@ -134,7 +134,7 @@ JNIEXPORT jstring JNICALL getOpenSSL(JNIEnv *env, jclass type , jstring data ) {
 	// jstring 转 char*
 	//const char* msg = (char *) env->GetStringUTFChars(data, false);
 	// char* 转 string
-	std::string str = "123456";
+	std::string str = "1234567890";
 	string str1 = CUtil::getMd5(str.c_str());
 	LOGD("result str=%s",str1.c_str());
 	return env->NewStringUTF(str1.c_str());
