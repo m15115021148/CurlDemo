@@ -74,7 +74,7 @@ private:
     CSafeQueue<TMessage> m_message_box;
 
     CFramework()
-        : m_config( CUBIC_CONFIG_PATH )
+        : m_config( CUBIC_CONFIG_ROOT_PATH )
         , m_messager( cubic_get_app_name() )
         , m_logger( cubic_get_app_name() )
         , m_watch( cubic_get_app_name() )

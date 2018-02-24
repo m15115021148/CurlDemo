@@ -59,9 +59,11 @@ private:
     pthread_t m_listen_thread;
     int m_inotify_fd;
     bool m_protect_ro_item;
+	string m_root_app_path;
 
     string key2Path( const string &str_key ) {
         string path( m_root_path );
+	path += m_root_app_path;
         path += "/";
         path += CStringTool::replaceDist( str_key, ".", "/" );
         return path;
@@ -204,7 +206,6 @@ private:
         string ret;
         char buf[CFG_LENTH] = {0};
         int n_fd = open( key2Path( str_key ).c_str(), O_RDONLY );
-		
         if( n_fd <= 0 ) {
             ret = "";
             return ret;
@@ -523,6 +524,14 @@ public:
         closedir( p_dir );
         return result;
     }
+
+	string setRootPath(const string &packName){
+		string path = "/";
+		path += packName;
+		path += CUBIC_CONFIG_PATH;
+		return m_root_app_path =  path;
+	};
+
 };
 
 #endif //_CCONFIG_CC_

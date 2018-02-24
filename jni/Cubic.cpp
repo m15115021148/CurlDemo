@@ -19,13 +19,13 @@
 #define LOG_TAG "Cubic"
 
 #define UNUSED_ARG(arg) (void)arg
+#define CUBIC_APP_SERVER_URL "https://www.meigelink.com/meiglink/api/v1"
 using namespace std;
 
 
 
 class Cubic : public ICubicApp
 {
-	
 public :
 	virtual ~Cubic()
     {};
@@ -91,6 +91,28 @@ static const char* cubic_get_app_name()
 
 //------------------------------------jni methods-------------------------------------------------------
 
+
+/*
+ * Class:     init
+ * Method:    initAppInfo
+ * Signature: (II)I
+ */
+JNIEXPORT void JNICALL initAppInfo(JNIEnv *env, jclass type , jobject obj ,jstring mac,jstring name) {
+	jclass native_class = env->GetObjectClass(obj);
+        jmethodID mId = env->GetMethodID(native_class, "getPackageName", "()Ljava/lang/String;");
+        jstring p_name = static_cast<jstring>(env->CallObjectMethod(obj, mId));
+	string packName  = CUtil::jstringTostring(env,p_name);
+	CubicCfgSetRootPath(packName);
+	CubicCfgSet(CUBIC_CFG_push_server,CUBIC_APP_SERVER_URL);
+	CubicCfgSet(CUBIC_CFG_serial_num ,CUtil::jstringTostring( env, mac) );
+	CubicCfgSet( CUBIC_CFG_push_uname, CUtil::jstringTostring( env, name) );
+
+	CRemoteReport::activate();
+
+	LOGD("cubic initAppInfo unamer=%s",CubicCfgGetStr( CUBIC_CFG_push_uname ).c_str());
+};
+
+
 /*
  * Class:     getMsg
  * Method:    test
@@ -99,7 +121,7 @@ static const char* cubic_get_app_name()
 JNIEXPORT jstring JNICALL getMsg(JNIEnv *env, jclass type , jstring msg ) {
 	//string str = CUtil::jstringTostring( env, msg) ;
 	
-//	LOGD("test ....push_server=%s",CubicCfgGetStr( str ).c_str());
+//	LOGD("test ....push_server=%s",CubicCfgGetStr( CUBIC_CFG_push_server ).c_str());
 		
 	jclass envcls = env->FindClass("android/os/Environment"); //获得类引用  
     if (envcls == nullptr) return msg;  
@@ -190,7 +212,24 @@ JNIEXPORT jstring JNICALL testCurl(JNIEnv *env, jclass type ,jstring jstr) {
  * Signature: (II)I 
  */
 JNIEXPORT void JNICALL registerUser(JNIEnv *env, jclass type) {
-	
+	int fd = 0;  
+    	int ret = 0;  
+    	char str[32];  
+    	FILE *fp = NULL;
+
+	LOGD("fuck2.txt\n");  
+	 fd = open("/storage/sdcard0/fuck2.txt", O_CREAT | O_WRONLY, 0644);  
+   	 if( fd <= 0 ) {
+            LOGD("fuck2.txt open failed");
+            return ;
+        }
+  
+   	 strcpy(str, "hello world!\n");  
+  
+ 	   ret = write(fd, str, strlen(str));  
+   	 LOGD("2 write bytes =%d\n", ret);  
+  
+ 	   close(fd);   	
 };
 
 
@@ -205,6 +244,7 @@ static JNINativeMethod methodsRx[] = {
 	{"hmacSha256", "([B)[B", (void*)hmacSha256 },
 	{"testCurl", "(Ljava/lang/String;)Ljava/lang/String;", (void*)testCurl },
 	{"registerUser", "()V", (void*)registerUser },
+	{"initAppInfo","(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;)V",(void*)initAppInfo }
 };
 
 /*
