@@ -146,6 +146,22 @@ private:
         return wsse;
     };
 
+	static string getCustomHeader(){
+		string uname = CubicCfgGetStr( CUBIC_CFG_push_uname );
+		string x_uuid = "client_uuid: ";
+		x_uuid += uname;
+		LOGD("getCustomHeader=%s", x_uuid.c_str() );
+		return x_uuid;
+	}
+
+	static string getCustomHeader1(){
+                string psw = CubicCfgGetStr( CUBIC_CFG_push_upswd );
+                string x_api_psw = "api_password: ";
+                x_api_psw += psw;
+                LOGD("getCustomHeader1=%s", x_api_psw.c_str() );
+                return x_api_psw;
+        }
+
     static int CurlDebugCallback(
         CURL* handle,
         curl_infotype type,
@@ -232,7 +248,9 @@ private:
             head_list = curl_slist_append( head_list, getWsseHeader().c_str() );
         }
 
-        //   head_list = curl_slist_append(head_list, "X-Api-Key: "+CubicGetConfig(CUBIC_CFG_push_api_key));
+		head_list = curl_slist_append( head_list , getCustomHeader().c_str() );
+		head_list = curl_slist_append( head_list , getCustomHeader1().c_str() );
+
         curl_easy_setopt( curl, CURLOPT_URL, addr.c_str() );
         curl_easy_setopt( curl, CURLOPT_HTTPHEADER, head_list );
 
@@ -313,7 +331,9 @@ private:
             head_list = curl_slist_append( head_list, getWsseHeader().c_str() );
         }
 
-        //   head_list = curl_slist_append(head_list, "X-Api-Key: "+CubicGetConfig(CUBIC_CFG_push_api_key));
+		head_list = curl_slist_append( head_list , getCustomHeader().c_str() );
+		head_list = curl_slist_append( head_list , getCustomHeader1().c_str() );
+
         curl_easy_setopt( curl, CURLOPT_URL, addr.c_str() );
         curl_easy_setopt( curl, CURLOPT_HTTPHEADER, head_list );
 
