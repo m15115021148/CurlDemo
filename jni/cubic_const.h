@@ -29,7 +29,7 @@
 #endif //CUBIC_APP_NAME_MAX
 
 
-
+#define CUBIC_CONFIG_ROOT_PATH              "/data/data"
 #define CUBIC_CONFIG_PATH                   "/etc/cfg"
 #define CUBIC_MSG_SOCK_DIR                  "/var/"
 #define CUBIC_VOICE_MSG_CACHE               "/tmp"

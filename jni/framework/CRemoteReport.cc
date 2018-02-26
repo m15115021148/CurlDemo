@@ -146,6 +146,22 @@ private:
         return wsse;
     };
 
+	static string getCustomHeader(){
+		string uname = CubicCfgGetStr( CUBIC_CFG_push_uname );
+		string x_uuid = "client_uuid: ";
+		x_uuid += uname;
+		LOGD("getCustomHeader=%s", x_uuid.c_str() );
+		return x_uuid;
+	}
+
+	static string getCustomHeader1(){
+                string psw = CubicCfgGetStr( CUBIC_CFG_push_upswd );
+                string x_api_psw = "api_password: ";
+                x_api_psw += psw;
+                LOGD("getCustomHeader1=%s", x_api_psw.c_str() );
+                return x_api_psw;
+        }
+
     static int CurlDebugCallback(
         CURL* handle,
         curl_infotype type,
@@ -232,7 +248,9 @@ private:
             head_list = curl_slist_append( head_list, getWsseHeader().c_str() );
         }
 
-        //   head_list = curl_slist_append(head_list, "X-Api-Key: "+CubicGetConfig(CUBIC_CFG_push_api_key));
+		head_list = curl_slist_append( head_list , getCustomHeader().c_str() );
+		head_list = curl_slist_append( head_list , getCustomHeader1().c_str() );
+
         curl_easy_setopt( curl, CURLOPT_URL, addr.c_str() );
         curl_easy_setopt( curl, CURLOPT_HTTPHEADER, head_list );
 
@@ -313,7 +331,9 @@ private:
             head_list = curl_slist_append( head_list, getWsseHeader().c_str() );
         }
 
-        //   head_list = curl_slist_append(head_list, "X-Api-Key: "+CubicGetConfig(CUBIC_CFG_push_api_key));
+		head_list = curl_slist_append( head_list , getCustomHeader().c_str() );
+		head_list = curl_slist_append( head_list , getCustomHeader1().c_str() );
+
         curl_easy_setopt( curl, CURLOPT_URL, addr.c_str() );
         curl_easy_setopt( curl, CURLOPT_HTTPHEADER, head_list );
 
@@ -557,15 +577,20 @@ public:
         snprintf( req, JSON_SIZE_MAX,
                   "{"
                   "\"lang\":\"en\","
-                  "\"bundle_id\":\"jp.e3e.mamotel.device.sip\","
+                  "\"bundle_id\":\"info.e3phone.iPhone\","
                   "\"name\":\"%s\","
-                  "\"serial_number\":\"%s\""
+		  "\"serial_num\":\"%s\","
+		  "\"versionCode\":\"12\","
+	       	  "\"versionName\":\"version.1\","
+		  "\"appKey\":\"2017fbd152bf43c796219ad494cc010d\","
+                  "\"appSecret\":\"22f7f12b2348444aadb8aeb9ecd7a359\""
                   "}",
-                  CubicCfgGetStr( CUBIC_CFG_serial_num ).c_str(),
+                  CubicCfgGetStr( CUBIC_CFG_push_uname ).c_str(),
                   CubicCfgGetStr( CUBIC_CFG_serial_num ).c_str() );
-        snprintf( addr, PATH_MAX, "%s/clients.json", CubicCfgGetStr( CUBIC_CFG_push_server ).c_str() );
+        snprintf( addr, PATH_MAX, "%s/app.json", CubicCfgGetStr( CUBIC_CFG_push_server ).c_str() );
         int ret = sendRequest(  addr, req, resp, JSON_SIZE_MAX, false );
         RETNIF_LOGE( ret > 299 || ret < 200, ret, "activate request refused, http result=%d", ret );
+	LOGD("activate resp=%s",resp );
         Document resp_dom;
         RETNIF_LOGE( resp_dom.ParseInsitu( resp ).HasParseError(), -1, "activate error when parse response: %s", resp );
         RETNIF_LOGE( !resp_dom.HasMember( "client_uuid" ) || !resp_dom["client_uuid"].IsString(), -2, "activate fail, not valid client_uuid !" );
@@ -884,7 +909,7 @@ public:
         char addr[PATH_MAX + 4] = {0};
         LOGD( "getDeviceList()" );
 		
-		snprintf( addr, PATH_MAX, "%s", url.c_str());
+		snprintf( addr, PATH_MAX, "%s/device/devices.json", CubicCfgGetStr( CUBIC_CFG_push_server ).c_str() );
 		int ret = sendRequest(  addr, req, resp, JSON_SIZE_MAX );
 		RETNIF_LOGE( ret > 299 || ret < 200, resp, "getDeviceList request refused, http result=%d", ret );
 		LOGD("resp=%s",resp);

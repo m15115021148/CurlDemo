@@ -121,6 +121,8 @@
     CFramework::GetInstance().GetConfig().getv<string>( key, "", __VA_ARGS__ )
 
 
+#define CubicCfgSetRootPath( key ) \
+	CFramework::GetInstance().GetConfig().setRootPath( key )
 
 #define CubicCfgSet( key, val ) \
     CFramework::GetInstance().GetConfig().set( key, val )
