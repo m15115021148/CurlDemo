@@ -26,7 +26,8 @@
 #include <vector>
 #include <iomanip>
 
-
+#define CUBIC_REQUEST_APP_KEY "2017fbd152bf43c796219ad494cc010d"
+#define CUBIC_REQUEST_APP_SECRET "22f7f12b2348444aadb8aeb9ecd7a359"
 #ifdef CUBIC_LOG_TAG
 #undef CUBIC_LOG_TAG
 #endif //CUBIC_LOG_TAG
@@ -568,7 +569,7 @@ private:
     };
 
 public:
-    static int activate() {
+    static int activate(const string &versionCode, const string &versionName) {
         char req[JSON_SIZE_MAX + 4] = {0};
         char resp[JSON_SIZE_MAX + 4] = {0};
         char addr[PATH_MAX + 4] = {0};
@@ -579,14 +580,18 @@ public:
                   "\"lang\":\"en\","
                   "\"bundle_id\":\"info.e3phone.iPhone\","
                   "\"name\":\"%s\","
-		  "\"serial_num\":\"%s\","
-		  "\"versionCode\":\"12\","
-	       	  "\"versionName\":\"version.1\","
-		  "\"appKey\":\"2017fbd152bf43c796219ad494cc010d\","
-                  "\"appSecret\":\"22f7f12b2348444aadb8aeb9ecd7a359\""
+			  "\"serial_num\":\"%s\","
+		  	"\"versionCode\":\"%s\","
+	       	  	"\"versionName\":\"%s\","
+		  	"\"appKey\":\"%s\","
+                  "\"appSecret\":\"%s\""
                   "}",
                   CubicCfgGetStr( CUBIC_CFG_push_uname ).c_str(),
-                  CubicCfgGetStr( CUBIC_CFG_serial_num ).c_str() );
+                  CubicCfgGetStr( CUBIC_CFG_serial_num ).c_str(), 
+			versionCode.c_str(), 
+			versionName.c_str(), 
+			CUBIC_REQUEST_APP_KEY, 
+			CUBIC_REQUEST_APP_SECRET );
         snprintf( addr, PATH_MAX, "%s/app.json", CubicCfgGetStr( CUBIC_CFG_push_server ).c_str() );
         int ret = sendRequest(  addr, req, resp, JSON_SIZE_MAX, false );
         RETNIF_LOGE( ret > 299 || ret < 200, ret, "activate request refused, http result=%d", ret );
@@ -903,7 +908,7 @@ public:
         return 0;
     };
 	
-	static string getDeviceList(const string &url){
+	static string getDeviceList(){
 		char req[JSON_SIZE_MAX + 4] = {0};
         char resp[JSON_SIZE_MAX + 4] = {0};
         char addr[PATH_MAX + 4] = {0};
@@ -1142,6 +1147,23 @@ public:
         RETNIF_LOGE( ret > 299 || ret < 200, ret, "reportNewFirmware request refused, http result=%d", ret );
         return 0;
     };
+
+	static string updateApp(const string versionCode){
+		char req[JSON_SIZE_MAX + 4] = {0};
+        	char resp[JSON_SIZE_MAX + 4] = {0};
+        	char addr[PATH_MAX + 4] = {0};
+        	LOGD( "updateApp()" );
+		
+		snprintf( addr, PATH_MAX, "%s/ota/version.json?appKey=%s&appSecret=%s&ver=%s", 
+			CubicCfgGetStr( CUBIC_CFG_push_server ).c_str(),
+			CUBIC_REQUEST_APP_KEY ,
+			CUBIC_REQUEST_APP_SECRET,
+			versionCode.c_str() );
+		int ret = sendRequest(  addr, req, resp, JSON_SIZE_MAX );
+		RETNIF_LOGE( ret > 299 || ret < 200, resp, "getDeviceList request refused, http result=%d", ret );
+		LOGD("resp=%s",resp);
+		return resp;
+	};
 };
 
 
