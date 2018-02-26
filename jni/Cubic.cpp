@@ -95,7 +95,7 @@ static const char* cubic_get_app_name()
  * Method:    initAppInfo
  * Signature: (II)I
  */
-JNIEXPORT void JNICALL initAppInfo(JNIEnv *env, jclass type , jobject obj ,jstring mac,jstring name) {
+JNIEXPORT void JNICALL meig_initAppInfo(JNIEnv *env, jclass type , jobject obj ,jstring mac ) {
 	jclass native_class = env->GetObjectClass(obj);
         jmethodID mId = env->GetMethodID(native_class, "getPackageName", "()Ljava/lang/String;");
         jstring p_name = static_cast<jstring>(env->CallObjectMethod(obj, mId));
@@ -103,7 +103,6 @@ JNIEXPORT void JNICALL initAppInfo(JNIEnv *env, jclass type , jobject obj ,jstri
 	CubicCfgSetRootPath(packName);
 	CubicCfgSet(CUBIC_CFG_push_server,CUBIC_APP_SERVER_URL);
 	CubicCfgSet(CUBIC_CFG_serial_num ,CUtil::jstringTostring( env, mac) );
-	CubicCfgSet( CUBIC_CFG_push_uname, CUtil::jstringTostring( env, name) );
 };
 
 /*
@@ -111,7 +110,7 @@ JNIEXPORT void JNICALL initAppInfo(JNIEnv *env, jclass type , jobject obj ,jstri
  * Method:    test
  * Signature: (II)I 
  */
-JNIEXPORT jstring JNICALL getDeviceList(JNIEnv *env, jclass type) {
+JNIEXPORT jstring JNICALL meig_getDeviceList(JNIEnv *env, jclass type) {
 //	string weburl = CUtil::jstringTostring(env,jstr);
 	
 	string str = CRemoteReport::getDeviceList();
@@ -126,10 +125,11 @@ JNIEXPORT jstring JNICALL getDeviceList(JNIEnv *env, jclass type) {
  * Method:    test
  * Signature: (II)I 
  */
-JNIEXPORT jint JNICALL registerUser(JNIEnv *env, jclass type, jstring versionCode, jstring versionName ) {
+JNIEXPORT jint JNICALL meig_registerUser(JNIEnv *env, jclass type, jstring userName, jstring versionCode, jstring versionName ) {
+	string u_name = CUtil::jstringTostring(env, userName);
 	string code = CUtil::jstringTostring(env, versionCode);
 	string name = CUtil::jstringTostring(env, versionName);
-	return CRemoteReport::activate(code, name );
+	return CRemoteReport::activate(u_name, code, name );
 };
 
 /*
@@ -137,7 +137,7 @@ JNIEXPORT jint JNICALL registerUser(JNIEnv *env, jclass type, jstring versionCod
  * Method:    updateApp
  * Signature: (II)I 
  */
-JNIEXPORT jstring JNICALL updateApp(JNIEnv *env, jclass type, jstring versionCode) {
+JNIEXPORT jstring JNICALL meig_updateApp(JNIEnv *env, jclass type, jstring versionCode) {
 	string code = CUtil::jstringTostring(env, versionCode);
 	string req = CRemoteReport::updateApp(code);
 	return env->NewStringUTF(req.c_str());
@@ -150,10 +150,10 @@ JNIEXPORT const char *classPathNameRx = "com/meigsmart/test/CubicUtil";
 
 
 static JNINativeMethod methodsRx[] = { 
-	{"getDeviceList", "()Ljava/lang/String;", (void*)getDeviceList },
-	{"registerUser", "(Ljava/lang/String;Ljava/lang/String;)I", (void*)registerUser },
-	{"initAppInfo","(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;)V",(void*)initAppInfo },
-	{"updateApp","(Ljava/lang/String;)Ljava/lang/String;",(void*)updateApp }
+	{"meig_getDeviceList", "()Ljava/lang/String;", (void*)meig_getDeviceList },
+	{"meig_registerUser", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)I", (void*)meig_registerUser },
+	{"meig_initAppInfo","(Ljava/lang/Object;Ljava/lang/String;)V",(void*)meig_initAppInfo },
+	{"meig_updateApp","(Ljava/lang/String;)Ljava/lang/String;",(void*)meig_updateApp }
 };
 
 /*

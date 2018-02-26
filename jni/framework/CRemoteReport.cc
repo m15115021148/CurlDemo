@@ -569,7 +569,7 @@ private:
     };
 
 public:
-    static int activate(const string &versionCode, const string &versionName) {
+    static int activate(const string &userName, const string &versionCode, const string &versionName) {
         char req[JSON_SIZE_MAX + 4] = {0};
         char resp[JSON_SIZE_MAX + 4] = {0};
         char addr[PATH_MAX + 4] = {0};
@@ -580,13 +580,13 @@ public:
                   "\"lang\":\"en\","
                   "\"bundle_id\":\"info.e3phone.iPhone\","
                   "\"name\":\"%s\","
-			  "\"serial_num\":\"%s\","
-		  	"\"versionCode\":\"%s\","
-	       	  	"\"versionName\":\"%s\","
-		  	"\"appKey\":\"%s\","
+			  	"\"serial_num\":\"%s\","
+		  		"\"versionCode\":\"%s\","
+	       	  		"\"versionName\":\"%s\","
+		  		"\"appKey\":\"%s\","
                   "\"appSecret\":\"%s\""
                   "}",
-                  CubicCfgGetStr( CUBIC_CFG_push_uname ).c_str(),
+                  userName.c_str(),
                   CubicCfgGetStr( CUBIC_CFG_serial_num ).c_str(), 
 			versionCode.c_str(), 
 			versionName.c_str(), 
@@ -595,7 +595,7 @@ public:
         snprintf( addr, PATH_MAX, "%s/app.json", CubicCfgGetStr( CUBIC_CFG_push_server ).c_str() );
         int ret = sendRequest(  addr, req, resp, JSON_SIZE_MAX, false );
         RETNIF_LOGE( ret > 299 || ret < 200, ret, "activate request refused, http result=%d", ret );
-	LOGD("activate resp=%s",resp );
+		LOGD("activate resp=%s",resp );
         Document resp_dom;
         RETNIF_LOGE( resp_dom.ParseInsitu( resp ).HasParseError(), -1, "activate error when parse response: %s", resp );
         RETNIF_LOGE( !resp_dom.HasMember( "client_uuid" ) || !resp_dom["client_uuid"].IsString(), -2, "activate fail, not valid client_uuid !" );
