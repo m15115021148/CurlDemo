@@ -24,14 +24,89 @@ LOCAL_STATIC_LIBRARIES := libcrypto libssl
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/libs/openssl/include
 include $(PREBUILT_STATIC_LIBRARY) 
 
-#pjsip openssl
+#pjsip openssl start --------------------------------------------------##PREBUILT_SHARED_LIBRARY
 include $(CLEAR_VARS)  
-LOCAL_MODULE    := libpjsua2  
-LOCAL_SRC_FILES := libs/pjproject-2.7/lib/libpjsua2.so  
+LOCAL_MODULE    := libpj-arm-unknown-linux-androideabi  
+LOCAL_SRC_FILES := libs/pjproject-2.7/lib/libpj-arm-unknown-linux-androideabi.a  
 LOCAL_SHARED_LIBRARIES := libz
 LOCAL_STATIC_LIBRARIES := libcrypto libssl
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/libs/openssl/include
-include $(PREBUILT_SHARED_LIBRARY)
+include $(PREBUILT_STATIC_LIBRARY)
+
+include $(CLEAR_VARS)  
+LOCAL_MODULE    := libpjlib-util-arm-unknown-linux-androideabi  
+LOCAL_SRC_FILES := libs/pjproject-2.7/lib/libpjlib-util-arm-unknown-linux-androideabi.a
+LOCAL_SHARED_LIBRARIES := libz
+LOCAL_STATIC_LIBRARIES := libcrypto libssl
+LOCAL_C_INCLUDES := $(LOCAL_PATH)/libs/openssl/include
+include $(PREBUILT_STATIC_LIBRARY)
+
+include $(CLEAR_VARS)  
+LOCAL_MODULE    := libpjmedia-arm-unknown-linux-androideabi  
+LOCAL_SRC_FILES := libs/pjproject-2.7/lib/libpjmedia-arm-unknown-linux-androideabi.a
+LOCAL_SHARED_LIBRARIES := libz
+LOCAL_STATIC_LIBRARIES := libcrypto libssl
+LOCAL_C_INCLUDES := $(LOCAL_PATH)/libs/openssl/include
+include $(PREBUILT_STATIC_LIBRARY)
+
+include $(CLEAR_VARS)  
+LOCAL_MODULE    := libpjmedia-audiodev-arm-unknown-linux-androideabi  
+LOCAL_SRC_FILES := libs/pjproject-2.7/lib/libpjmedia-audiodev-arm-unknown-linux-androideabi.a
+LOCAL_SHARED_LIBRARIES := libz
+LOCAL_STATIC_LIBRARIES := libcrypto libssl
+LOCAL_C_INCLUDES := $(LOCAL_PATH)/libs/openssl/include
+include $(PREBUILT_STATIC_LIBRARY)
+
+include $(CLEAR_VARS)  
+LOCAL_MODULE    := libpjmedia-codec-arm-unknown-linux-androideabi  
+LOCAL_SRC_FILES := libs/pjproject-2.7/lib/libpjmedia-codec-arm-unknown-linux-androideabi.a
+LOCAL_SHARED_LIBRARIES := libz
+LOCAL_STATIC_LIBRARIES := libcrypto libssl
+LOCAL_C_INCLUDES := $(LOCAL_PATH)/libs/openssl/include
+include $(PREBUILT_STATIC_LIBRARY)
+
+include $(CLEAR_VARS)  
+LOCAL_MODULE    := libpjmedia-videodev-arm-unknown-linux-androideabi  
+LOCAL_SRC_FILES := libs/pjproject-2.7/lib/libpjmedia-videodev-arm-unknown-linux-androideabi.a
+LOCAL_SHARED_LIBRARIES := libz
+LOCAL_STATIC_LIBRARIES := libcrypto libssl
+LOCAL_C_INCLUDES := $(LOCAL_PATH)/libs/openssl/include
+include $(PREBUILT_STATIC_LIBRARY)
+
+include $(CLEAR_VARS)  
+LOCAL_MODULE    := libpjnath-arm-unknown-linux-androideabi  
+LOCAL_SRC_FILES := libs/pjproject-2.7/lib/libpjnath-arm-unknown-linux-androideabi.a
+LOCAL_SHARED_LIBRARIES := libz
+LOCAL_STATIC_LIBRARIES := libcrypto libssl
+LOCAL_C_INCLUDES := $(LOCAL_PATH)/libs/openssl/include
+include $(PREBUILT_STATIC_LIBRARY)
+
+include $(CLEAR_VARS)  
+LOCAL_MODULE    := libpjsip-simple-arm-unknown-linux-androideabi  
+LOCAL_SRC_FILES := libs/pjproject-2.7/lib/libpjsip-simple-arm-unknown-linux-androideabi.a
+LOCAL_SHARED_LIBRARIES := libz
+LOCAL_STATIC_LIBRARIES := libcrypto libssl
+LOCAL_C_INCLUDES := $(LOCAL_PATH)/libs/openssl/include
+include $(PREBUILT_STATIC_LIBRARY)
+
+include $(CLEAR_VARS)  
+LOCAL_MODULE    := libpjsua2-arm-unknown-linux-androideabi  
+LOCAL_SRC_FILES := libs/pjproject-2.7/lib/libpjsua2-arm-unknown-linux-androideabi.a
+LOCAL_SHARED_LIBRARIES := libz
+LOCAL_STATIC_LIBRARIES := libcrypto libssl
+LOCAL_C_INCLUDES := $(LOCAL_PATH)/libs/openssl/include
+include $(PREBUILT_STATIC_LIBRARY)
+
+include $(CLEAR_VARS)  
+LOCAL_MODULE    := libresample-arm-unknown-linux-androideabi  
+LOCAL_SRC_FILES := libs/pjproject-2.7/lib/libresample-arm-unknown-linux-androideabi.a
+LOCAL_SHARED_LIBRARIES := libz
+LOCAL_STATIC_LIBRARIES := libcrypto libssl
+LOCAL_C_INCLUDES := $(LOCAL_PATH)/libs/openssl/include
+include $(PREBUILT_STATIC_LIBRARY)
+
+
+#pjsip openssl end  --------------------------------------------------
 
 
 include $(CLEAR_VARS)
@@ -47,16 +122,7 @@ LOCAL_PRELINK_MODULE := false
 LOCAL_MODULE_TAGS :=optional
 
 
-LOCAL_SHARED_LIBRARIES := libpjsua	\
-						  libpjlib-util \
-						  libpjlib \
-						  libpjsip \
-						  libpjsip-simple \
-						  libpjsip-ua \
-						  libpjmedia \
-						  libpjmedia-audiodev \
-						  libpjmedia-codec  \
-						  libui \
+LOCAL_SHARED_LIBRARIES := libui \
 						  libcutils \
 						  libutils \
 						  libbinder \
@@ -67,10 +133,21 @@ LOCAL_SHARED_LIBRARIES := libpjsua	\
 						  libdl \
 						  libhardware_legacy \
 						  libstlport_static \
-						  libz \
-						  libpjsua2
+						  libz 
 						  
-LOCAL_STATIC_LIBRARIES := libcrypto libssl libcurl				  
+LOCAL_STATIC_LIBRARIES := libcrypto \
+						  libssl \
+						  libcurl \
+						  libpj-arm-unknown-linux-androideabi \
+						  libpjlib-util-arm-unknown-linux-androideabi \
+						  libpjmedia-arm-unknown-linux-androideabi \
+						  libpjmedia-audiodev-arm-unknown-linux-androideabi \
+						  libpjmedia-codec-arm-unknown-linux-androideabi \
+						  libpjmedia-videodev-arm-unknown-linux-androideabi \
+						  libpjnath-arm-unknown-linux-androideabi \
+						  libpjsip-simple-arm-unknown-linux-androideabi \
+						  libpjsua2-arm-unknown-linux-androideabi \
+						  libresample-arm-unknown-linux-androideabi 
 						  
 
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/libs/pjproject-2.7/pjlib/include\

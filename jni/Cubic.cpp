@@ -18,7 +18,10 @@
 #define LOG_TAG "Cubic"
 
 #define UNUSED_ARG(arg) (void)arg
-#define CUBIC_APP_SERVER_URL "https://www.meigelink.com/meiglink/api/v1"
+#define CUBIC_APP_SERVER_URL 				"https://www.meigelink.com/meiglink/api/v1"
+#define CUBIC_APP_SIP_DEFAILT_STUN_ADDR 	"120.24.77.212:3478"
+#define CUBIC_APP_SIP_STUN_ADDR 			"120.24.77.212:3478"
+#define CUBIC_APP_SIP_PROTOCOL 				"TLS"
 using namespace std;
 
 
@@ -36,6 +39,7 @@ public :
 
 	// interface of ICubicApp
     bool onInit() {
+		LOGD("onInit %s",CUBIC_THIS_APP );
         return true;
     };
 
@@ -51,30 +55,6 @@ public :
         return 0;
     };
 	
-	static int read_eeprom(int fd, char buff[], int addr, int count)  
-	{  
-		int res;  
-		int i;  
-		  
-		for(i=0; i<PAGE_SIZE; i++)  
-		{  
-			buff[i]=0;  
-		}  
-		  
-
-		if(write(fd, &addr, 1) != 1)  
-			return -1;  
-		usleep(10000);  
-		res=read(fd, buff, count);  
-		LOGD("read %d byte at 0x%.2x\n", res, addr);  
-		for(i=0; i<PAGE_SIZE; i++)  
-		{  
-			LOGD("0x%.2x, ", buff[i]);  
-		}  
-		  
-		return res;  
-	}
-	
 };
 
 // IMPLEMENT_CUBIC_APP(CoreApp)
@@ -84,7 +64,7 @@ static ICubicApp* cubic_get_app_instance()
 };
 static const char* cubic_get_app_name()
 {
-    return "Cubic";
+    return "CoreApp";
 };
 
 //------------------------------------jni methods-------------------------------------------------------
@@ -95,14 +75,30 @@ static const char* cubic_get_app_name()
  * Method:    initAppInfo
  * Signature: (II)I
  */
-JNIEXPORT void JNICALL meig_initAppInfo(JNIEnv *env, jclass type , jobject obj ,jstring mac ) {
+JNIEXPORT void JNICALL meig_initAppInfo(JNIEnv *env, jclass type , jobject obj ) {
 	jclass native_class = env->GetObjectClass(obj);
-        jmethodID mId = env->GetMethodID(native_class, "getPackageName", "()Ljava/lang/String;");
-        jstring p_name = static_cast<jstring>(env->CallObjectMethod(obj, mId));
+	jmethodID mId = env->GetMethodID(native_class, "getPackageName", "()Ljava/lang/String;");
+	jstring p_name = static_cast<jstring>(env->CallObjectMethod(obj, mId));
 	string packName  = CUtil::jstringTostring(env,p_name);
 	CubicCfgSetRootPath(packName);
 	CubicCfgSet(CUBIC_CFG_push_server,CUBIC_APP_SERVER_URL);
-	CubicCfgSet(CUBIC_CFG_serial_num ,CUtil::jstringTostring( env, mac) );
+	CubicCfgSet(CUBIC_CFG_sip_defailt_stun_addr, CUBIC_APP_SIP_DEFAILT_STUN_ADDR);
+	CubicCfgSet(CUBIC_CFG_sip_stun_addr, CUBIC_APP_SIP_STUN_ADDR);
+	CubicCfgSet(CUBIC_CFG_sip_protocol, CUBIC_APP_SIP_PROTOCOL);
+
+	// setup signal handle
+    signal( SIGINT,  main_quit );
+    signal( SIGHUP,  main_quit );
+    signal( SIGABRT, main_quit );
+    signal( SIGTERM, main_quit );
+    signal( SIGSTOP, main_quit );
+    signal( SIGCHLD, main_quit );
+
+    // setup frameork instance
+    if( !CFramework::GetInstance().init() ) {
+        CubicLogE( "Fail to init app" );
+        return ;
+    }
 };
 
 /*
@@ -125,11 +121,18 @@ JNIEXPORT jstring JNICALL meig_getDeviceList(JNIEnv *env, jclass type) {
  * Method:    test
  * Signature: (II)I 
  */
-JNIEXPORT jint JNICALL meig_registerUser(JNIEnv *env, jclass type, jstring userName, jstring versionCode, jstring versionName ) {
+JNIEXPORT jint JNICALL meig_registerUser(JNIEnv *env, jclass type, jstring userName, jstring mac, jstring versionCode, jstring versionName ) {
 	string u_name = CUtil::jstringTostring(env, userName);
+	string j_mac = CUtil::jstringTostring(env, mac);
 	string code = CUtil::jstringTostring(env, versionCode);
 	string name = CUtil::jstringTostring(env, versionName);
-	return CRemoteReport::activate(u_name, code, name );
+	CubicCfgSet(CUBIC_CFG_serial_num ,j_mac );
+	int ret = CRemoteReport::activate(u_name, code, name );
+	if(ret == 0){
+		LOGD("sip register start ...........");
+		CubicPost( CUBIC_APP_NAME_SIP_SERVICE, CUBIC_MSG_SIP_REGISTER );
+	}
+	return ret;
 };
 
 /*
@@ -143,17 +146,17 @@ JNIEXPORT jstring JNICALL meig_updateApp(JNIEnv *env, jclass type, jstring versi
 	return env->NewStringUTF(req.c_str());
 };
 
-
 //------------------------------------jni loaded----------------------------------------------------------
 
-JNIEXPORT const char *classPathNameRx = "com/meigsmart/test/CubicUtil";
+//JNIEXPORT const char *classPathNameRx = "com/meigsmart/test/CubicUtil";
+JNIEXPORT const char *classPathNameRx = "com/meigsmart/meigsdklibs/jni/CubicUtil";
 
 
 static JNINativeMethod methodsRx[] = { 
 	{"meig_getDeviceList", "()Ljava/lang/String;", (void*)meig_getDeviceList },
-	{"meig_registerUser", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)I", (void*)meig_registerUser },
-	{"meig_initAppInfo","(Ljava/lang/Object;Ljava/lang/String;)V",(void*)meig_initAppInfo },
-	{"meig_updateApp","(Ljava/lang/String;)Ljava/lang/String;",(void*)meig_updateApp }
+	{"meig_registerUser", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)I", (void*)meig_registerUser },
+	{"meig_initAppInfo","(Ljava/lang/Object;)V",(void*)meig_initAppInfo },
+	{"meig_updateApp","(Ljava/lang/String;)Ljava/lang/String;",(void*)meig_updateApp },
 };
 
 /*
