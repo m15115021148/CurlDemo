@@ -142,7 +142,21 @@ JNIEXPORT jint JNICALL meig_registerUser(JNIEnv *env, jclass type, jstring userN
  */
 JNIEXPORT jstring JNICALL meig_updateApp(JNIEnv *env, jclass type, jstring versionCode) {
 	string code = CUtil::jstringTostring(env, versionCode);
-	string req = CRemoteReport::updateApp(code);
+
+	jclass envcls = env->FindClass("android/os/Environment");
+//	if (envcls == nullptr) return "";
+	jmethodID id = env->GetStaticMethodID(envcls, "getExternalStorageDirectory", "()Ljava/io/File;"); 
+	jobject fileObj = env->CallStaticObjectMethod(envcls,id,""); 
+	jclass flieClass = env->GetObjectClass(fileObj);
+	jmethodID getpathId = env->GetMethodID(flieClass, "getPath", "()Ljava/lang/String;"); 
+	jstring pathStr = (jstring)env->CallObjectMethod(fileObj,getpathId,"");  
+
+	string path = CUtil::jstringTostring(env, pathStr);
+	LOGD("updateApp download path=%s",path.c_str() );
+	path += "/MeiG/MeiGApp.apk";
+	LOGD("updateApp download path=%s",path.c_str() );
+
+	string req = CRemoteReport::updateApp(code, path);
 	return env->NewStringUTF(req.c_str());
 };
 

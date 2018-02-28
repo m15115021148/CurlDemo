@@ -1148,7 +1148,7 @@ public:
         return 0;
     };
 
-	static string updateApp(const string versionCode){
+	static string updateApp(const string &versionCode , const string &fpath){
 		char req[JSON_SIZE_MAX + 4] = {0};
         	char resp[JSON_SIZE_MAX + 4] = {0};
         	char addr[PATH_MAX + 4] = {0};
@@ -1162,7 +1162,34 @@ public:
 		int ret = sendRequest(  addr, req, resp, JSON_SIZE_MAX );
 		RETNIF_LOGE( ret > 299 || ret < 200, resp, "getDeviceList request refused, http result=%d", ret );
 		LOGD("resp=%s",resp);
+		Document resp_dom;
+		RETNIF_LOGE( resp_dom.ParseInsitu( resp ).HasParseError(), "", "updateApp error when parse response: %s", resp );
+		RETNIF_LOGE( !resp_dom.HasMember( "result" ) || !resp_dom["result"].IsNumber(), "", "updateApp fail, not valid result !" );
+		RETNIF_LOGE( !resp_dom.HasMember( "versionCode" ) || !resp_dom["versionCode"].IsString(), "", "updateApp fail, not valid versionCode !" );
+		RETNIF_LOGE( !resp_dom.HasMember( "url" ) || !resp_dom["url"].IsString(), "", "updateApp fail, not valid url !" );
+		if(resp_dom["result"].GetInt() == 200 && resp_dom["versionCode"].GetString() > versionCode ){
+			string url = resp_dom["url"].GetString();
+			LOGD("updata app, start download apk ,url=%s",url.c_str() );
+			return downloadApk(url,fpath);
+		}
 		return resp;
+	};
+
+	static string downloadApk(const string &url, const string &fpath ){
+		LOGD("downloadApk ...");
+		string fname = "/storage/sdcard0/Meig/";
+		fname += CUtil::getFileNameOfPath( url );
+		LOGD("fname path =%s",fname.c_str() );
+		FILE* file = fopen( fname.c_str(), "w+" );
+		RETNIF_LOGE( file == NULL, "null", "downloadApk failed, file can not open" );
+		int ret = sendRequestFile( url, file, 0x400000 );
+		fclose( file );
+		if( ret < 0){
+			unlink( fpath.c_str() );
+			return "";
+		}
+		LOGD("downloadApk success fpath=%s",fpath.c_str() );
+		return fname;
 	};
 };
 
