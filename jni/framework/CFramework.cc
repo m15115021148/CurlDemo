@@ -98,7 +98,7 @@ public:
         if( mb_initAppOk ) {
             return true;
         }
-
+		LOGD("init ..%s",CUBIC_THIS_APP );
         // load config
         int n_level_limit = 0;
         n_level_limit = m_config.get( CUBIC_CFG_log_level_limit, ( int )CUBIC_LOG_LEVEL_DEBUG );

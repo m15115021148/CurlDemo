@@ -13,6 +13,7 @@
 #include "CLock.cc"
 #include "CStringTool.cc"
 #include "CFramework.cc"
+#include "OtaAppService.cc"
 #include <stdint.h>
 #include <iostream>
 #include <sstream>
@@ -26,7 +27,8 @@
 #include <vector>
 #include <iomanip>
 
-
+#define CUBIC_REQUEST_APP_KEY "2017fbd152bf43c796219ad494cc010d"
+#define CUBIC_REQUEST_APP_SECRET "22f7f12b2348444aadb8aeb9ecd7a359"
 #ifdef CUBIC_LOG_TAG
 #undef CUBIC_LOG_TAG
 #endif //CUBIC_LOG_TAG
@@ -568,7 +570,7 @@ private:
     };
 
 public:
-    static int activate() {
+    static int activate(const string &userName, const string &versionCode, const string &versionName) {
         char req[JSON_SIZE_MAX + 4] = {0};
         char resp[JSON_SIZE_MAX + 4] = {0};
         char addr[PATH_MAX + 4] = {0};
@@ -579,18 +581,22 @@ public:
                   "\"lang\":\"en\","
                   "\"bundle_id\":\"info.e3phone.iPhone\","
                   "\"name\":\"%s\","
-		  "\"serial_num\":\"%s\","
-		  "\"versionCode\":\"12\","
-	       	  "\"versionName\":\"version.1\","
-		  "\"appKey\":\"2017fbd152bf43c796219ad494cc010d\","
-                  "\"appSecret\":\"22f7f12b2348444aadb8aeb9ecd7a359\""
+			  	"\"serial_num\":\"%s\","
+		  		"\"versionCode\":\"%s\","
+	       	  		"\"versionName\":\"%s\","
+		  		"\"appKey\":\"%s\","
+                  "\"appSecret\":\"%s\""
                   "}",
-                  CubicCfgGetStr( CUBIC_CFG_push_uname ).c_str(),
-                  CubicCfgGetStr( CUBIC_CFG_serial_num ).c_str() );
+                  userName.c_str(),
+                  CubicCfgGetStr( CUBIC_CFG_serial_num ).c_str(), 
+			versionCode.c_str(), 
+			versionName.c_str(), 
+			CUBIC_REQUEST_APP_KEY, 
+			CUBIC_REQUEST_APP_SECRET );
         snprintf( addr, PATH_MAX, "%s/app.json", CubicCfgGetStr( CUBIC_CFG_push_server ).c_str() );
         int ret = sendRequest(  addr, req, resp, JSON_SIZE_MAX, false );
         RETNIF_LOGE( ret > 299 || ret < 200, ret, "activate request refused, http result=%d", ret );
-	LOGD("activate resp=%s",resp );
+		LOGD("activate resp=%s",resp );
         Document resp_dom;
         RETNIF_LOGE( resp_dom.ParseInsitu( resp ).HasParseError(), -1, "activate error when parse response: %s", resp );
         RETNIF_LOGE( !resp_dom.HasMember( "client_uuid" ) || !resp_dom["client_uuid"].IsString(), -2, "activate fail, not valid client_uuid !" );
@@ -903,7 +909,7 @@ public:
         return 0;
     };
 	
-	static string getDeviceList(const string &url){
+	static string getDeviceList(){
 		char req[JSON_SIZE_MAX + 4] = {0};
         char resp[JSON_SIZE_MAX + 4] = {0};
         char addr[PATH_MAX + 4] = {0};
@@ -1142,6 +1148,51 @@ public:
         RETNIF_LOGE( ret > 299 || ret < 200, ret, "reportNewFirmware request refused, http result=%d", ret );
         return 0;
     };
+
+	static string updateApp(const string &versionCode , const string &fpath){
+		char req[JSON_SIZE_MAX + 4] = {0};
+        	char resp[JSON_SIZE_MAX + 4] = {0};
+        	char addr[PATH_MAX + 4] = {0};
+        	LOGD( "updateApp()" );
+		
+		snprintf( addr, PATH_MAX, "%s/ota/version.json?appKey=%s&appSecret=%s&ver=%s", 
+			CubicCfgGetStr( CUBIC_CFG_push_server ).c_str(),
+			CUBIC_REQUEST_APP_KEY ,
+			CUBIC_REQUEST_APP_SECRET,
+			versionCode.c_str() );
+		int ret = sendRequest(  addr, req, resp, JSON_SIZE_MAX );
+		RETNIF_LOGE( ret > 299 || ret < 200, resp, "getDeviceList request refused, http result=%d", ret );
+		LOGD("resp=%s",resp);
+		Document resp_dom;
+		RETNIF_LOGE( resp_dom.ParseInsitu( resp ).HasParseError(), "", "updateApp error when parse response: %s", resp );
+		RETNIF_LOGE( !resp_dom.HasMember( "result" ) || !resp_dom["result"].IsNumber(), "", "updateApp fail, not valid result !" );
+		RETNIF_LOGE( !resp_dom.HasMember( "versionCode" ) || !resp_dom["versionCode"].IsString(), "", "updateApp fail, not valid versionCode !" );
+		RETNIF_LOGE( !resp_dom.HasMember( "url" ) || !resp_dom["url"].IsString(), "", "updateApp fail, not valid url !" );
+		if(resp_dom["result"].GetInt() == 200 && resp_dom["versionCode"].GetString() > versionCode ){
+			string url = resp_dom["url"].GetString();
+			LOGD("updata app, start download apk ,url=%s",url.c_str() );
+			OtaAppService::loadApk(url);
+			return resp;
+		}
+		return resp;
+	};
+
+	static string downloadApk(const string &url ){
+		LOGD("downloadApk ...");
+		string fname = "/storage/sdcard0/Meig/";
+		fname += CUtil::getFileNameOfPath( url );
+		LOGD("fname path =%s",fname.c_str() );
+		FILE* file = fopen( fname.c_str(), "w+" );
+		RETNIF_LOGE( file == NULL, "null", "downloadApk failed, file can not open" );
+		int ret = sendRequestFile( url, file, 0x400000 );
+		fclose( file );
+		if( ret < 0){
+			unlink( fname.c_str() );
+			return "";
+		}
+		LOGD("downloadApk success fpath=%s",fname.c_str() );
+		return fname;
+	};
 };
 
 
