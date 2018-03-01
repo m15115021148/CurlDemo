@@ -13,6 +13,7 @@
 #include "CLock.cc"
 #include "CStringTool.cc"
 #include "CFramework.cc"
+#include "OtaAppService.cc"
 #include <stdint.h>
 #include <iostream>
 #include <sstream>
@@ -1170,12 +1171,13 @@ public:
 		if(resp_dom["result"].GetInt() == 200 && resp_dom["versionCode"].GetString() > versionCode ){
 			string url = resp_dom["url"].GetString();
 			LOGD("updata app, start download apk ,url=%s",url.c_str() );
-			return downloadApk(url,fpath);
+			OtaAppService::loadApk(url);
+			return resp;
 		}
 		return resp;
 	};
 
-	static string downloadApk(const string &url, const string &fpath ){
+	static string downloadApk(const string &url ){
 		LOGD("downloadApk ...");
 		string fname = "/storage/sdcard0/Meig/";
 		fname += CUtil::getFileNameOfPath( url );
@@ -1185,10 +1187,10 @@ public:
 		int ret = sendRequestFile( url, file, 0x400000 );
 		fclose( file );
 		if( ret < 0){
-			unlink( fpath.c_str() );
+			unlink( fname.c_str() );
 			return "";
 		}
-		LOGD("downloadApk success fpath=%s",fpath.c_str() );
+		LOGD("downloadApk success fpath=%s",fname.c_str() );
 		return fname;
 	};
 };

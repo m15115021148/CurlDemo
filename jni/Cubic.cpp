@@ -160,6 +160,19 @@ JNIEXPORT jstring JNICALL meig_updateApp(JNIEnv *env, jclass type, jstring versi
 	return env->NewStringUTF(req.c_str());
 };
 
+/*
+ * Class:     getVoiceMessageList
+ * Method:    meig_getVoiceMessageList
+ * Signature: (II)I 
+ */
+JNIEXPORT jstring JNICALL meig_getVoiceMessageList(JNIEnv *env, jclass type, jstring group_uuid) {
+	string j_group_uuid  = CUtil::jstringTostring(env,group_uuid);
+	CubicCfgSet(CUBIC_CFG_push_group,j_group_uuid);
+	CRemoteReport::getVMList(10);
+	return group_uuid;
+};
+
+
 //------------------------------------jni loaded----------------------------------------------------------
 
 //JNIEXPORT const char *classPathNameRx = "com/meigsmart/test/CubicUtil";
@@ -171,6 +184,7 @@ static JNINativeMethod methodsRx[] = {
 	{"meig_registerUser", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)I", (void*)meig_registerUser },
 	{"meig_initAppInfo","(Ljava/lang/Object;)V",(void*)meig_initAppInfo },
 	{"meig_updateApp","(Ljava/lang/String;)Ljava/lang/String;",(void*)meig_updateApp },
+	{"meig_getVoiceMessageList","(Ljava/lang/String;)Ljava/lang/String;",(void*)meig_getVoiceMessageList },
 };
 
 /*

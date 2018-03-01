@@ -161,7 +161,7 @@ LOCAL_C_INCLUDES := $(LOCAL_PATH)/libs/pjproject-2.7/pjlib/include\
 					$(LOCAL_PATH)/framework \
 					$(LOCAL_PATH)/util \
 					$(LOCAL_PATH)/app/sipservice \
-					$(LOCAL_PATH)/app/core
+					$(LOCAL_PATH)/app/otaAppService \
 
 
 include $(BUILD_SHARED_LIBRARY)
