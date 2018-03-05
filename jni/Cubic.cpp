@@ -22,6 +22,7 @@
 #define CUBIC_APP_SIP_DEFAILT_STUN_ADDR 	"120.24.77.212:3478"
 #define CUBIC_APP_SIP_STUN_ADDR 			"120.24.77.212:3478"
 #define CUBIC_APP_SIP_PROTOCOL 				"TLS"
+#define CUBIC_APP_RELEASE_SIGN				"308201dd30820146020101300d06092a864886f70d010105050030373116301406035504030c0d416e64726f69642044656275673110300e060355040a0c07416e64726f6964310b3009060355040613025553301e170d3137303930313033313835385a170d3437303832353033313835385a30373116301406035504030c0d416e64726f69642044656275673110300e060355040a0c07416e64726f6964310b300906035504061302555330819f300d06092a864886f70d010101050003818d0030818902818100b0a42ffd4eb99022a2098fafd4fdf697f415ad50b15de89e39a54ea5379b8cd0f76ae1aaadc91476c891e7f79f0746ad7c17555d8b6afb72fe29cd7bb4adddecf289f09385b81807a8e2464fad16fb31868216447ac3fff39f737715c764ccb2e4a6f6c4e37caf846b6a57d0591f73eca1550e608540c364eeac622e30b980d50203010001300d06092a864886f70d01010505000381810044613ad3552c2c628b9721c1bfea27806b9922429b8970b778811f54cea86def3c2e1da690803a67b3725359cb0487a5dc66a2516fd3214aa66ccf037501e2acb1ce6d3096a1a71e6dbbcd855913a86004b0061eb091bbb4e03033dc0564763ff401c7e748f4f026615b7f2c15d4d4a4cef192186294fc110239b403d2c49231"
 using namespace std;
 
 
@@ -75,18 +76,41 @@ static const char* cubic_get_app_name()
  * Method:    initAppInfo
  * Signature: (II)I
  */
-JNIEXPORT void JNICALL meig_initAppInfo(JNIEnv *env, jclass type , jobject obj ) {
+JNIEXPORT jint JNICALL meig_initAppInfo(JNIEnv *env, jclass type , jobject obj ) {
 	jclass native_class = env->GetObjectClass(obj);
-	jmethodID mId = env->GetMethodID(native_class, "getPackageName", "()Ljava/lang/String;");
-	jstring p_name = static_cast<jstring>(env->CallObjectMethod(obj, mId));
-	string packName  = CUtil::jstringTostring(env,p_name);
-	CubicCfgSetRootPath(packName);
-	CubicCfgSet(CUBIC_CFG_push_server,CUBIC_APP_SERVER_URL);
-	CubicCfgSet(CUBIC_CFG_sip_defailt_stun_addr, CUBIC_APP_SIP_DEFAILT_STUN_ADDR);
-	CubicCfgSet(CUBIC_CFG_sip_stun_addr, CUBIC_APP_SIP_STUN_ADDR);
-	CubicCfgSet(CUBIC_CFG_sip_protocol, CUBIC_APP_SIP_PROTOCOL);
+    jmethodID pm_id = env->GetMethodID(native_class, "getPackageManager", "()Landroid/content/pm/PackageManager;");
+    jobject pm_obj = env->CallObjectMethod(obj, pm_id);
+    jclass pm_clazz = env->GetObjectClass(pm_obj);
+// 得到 getPackageInfo 方法的 ID
+    jmethodID package_info_id = env->GetMethodID(pm_clazz, "getPackageInfo","(Ljava/lang/String;I)Landroid/content/pm/PackageInfo;");
+    jclass native_classs = env->GetObjectClass(obj);
+    jmethodID mId = env->GetMethodID(native_classs, "getPackageName", "()Ljava/lang/String;");
+    jstring pkg_str = static_cast<jstring>(env->CallObjectMethod(obj, mId));
+// 获得应用包的信息
+    jobject pi_obj = env->CallObjectMethod(pm_obj, package_info_id, pkg_str, 64);
+// 获得 PackageInfo 类
+    jclass pi_clazz = env->GetObjectClass(pi_obj);
+// 获得签名数组属性的 ID
+    jfieldID signatures_fieldId = env->GetFieldID(pi_clazz, "signatures", "[Landroid/content/pm/Signature;");
+    jobject signatures_obj = env->GetObjectField(pi_obj, signatures_fieldId);
+    jobjectArray signaturesArray = (jobjectArray)signatures_obj;
+    jsize size = env->GetArrayLength(signaturesArray);
+    jobject signature_obj = env->GetObjectArrayElement(signaturesArray, 0);
+    jclass signature_clazz = env->GetObjectClass(signature_obj);
+    jmethodID string_id = env->GetMethodID(signature_clazz, "toCharsString", "()Ljava/lang/String;");
+    jstring str = static_cast<jstring>(env->CallObjectMethod(signature_obj, string_id));
+    char *c_msg = (char*)env->GetStringUTFChars(str,0);
+    
+    if(strcmp(c_msg,CUBIC_APP_RELEASE_SIGN)==0)//签名一致  返回合法的 api key，否则返回错误
+    {
+		string packName  = CUtil::jstringTostring(env,pkg_str);
+		CubicCfgSetRootPath(packName);
+        CubicCfgSet(CUBIC_CFG_push_server,CUBIC_APP_SERVER_URL);
+        CubicCfgSet(CUBIC_CFG_sip_defailt_stun_addr, CUBIC_APP_SIP_DEFAILT_STUN_ADDR);
+        CubicCfgSet(CUBIC_CFG_sip_stun_addr, CUBIC_APP_SIP_STUN_ADDR);
+        CubicCfgSet(CUBIC_CFG_sip_protocol, CUBIC_APP_SIP_PROTOCOL);
 
-	// setup signal handle
+        // setup signal handle
     signal( SIGINT,  main_quit );
     signal( SIGHUP,  main_quit );
     signal( SIGABRT, main_quit );
@@ -97,8 +121,15 @@ JNIEXPORT void JNICALL meig_initAppInfo(JNIEnv *env, jclass type , jobject obj )
     // setup frameork instance
     if( !CFramework::GetInstance().init() ) {
         CubicLogE( "Fail to init app" );
-        return ;
+        return -1;
     }
+
+        return 0;
+    }else
+    {
+        return 404;
+	}
+
 };
 
 /*
@@ -182,7 +213,7 @@ JNIEXPORT const char *classPathNameRx = "com/meigsmart/meigsdklibs/jni/CubicUtil
 static JNINativeMethod methodsRx[] = { 
 	{"meig_getDeviceList", "()Ljava/lang/String;", (void*)meig_getDeviceList },
 	{"meig_registerUser", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)I", (void*)meig_registerUser },
-	{"meig_initAppInfo","(Ljava/lang/Object;)V",(void*)meig_initAppInfo },
+	{"meig_initAppInfo","(Ljava/lang/Object;)I",(void*)meig_initAppInfo },
 	{"meig_updateApp","(Ljava/lang/String;)Ljava/lang/String;",(void*)meig_updateApp },
 	{"meig_getVoiceMessageList","(Ljava/lang/String;)Ljava/lang/String;",(void*)meig_getVoiceMessageList },
 };
