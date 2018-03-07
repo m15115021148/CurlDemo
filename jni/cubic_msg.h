@@ -16,6 +16,7 @@
 #define CUBIC_VERNO_LEN_MAX 128
 #define CUBIC_INFO_LEN_MAX 256
 #define CUBIC_PATH_MAX 256
+#define CUBIC_FUNC_DESC_MAX 64
 
 typedef struct cubic_msg_gps_fence_evt {
     int index; // index of fence config
@@ -109,6 +110,12 @@ typedef struct cubic_msg_vm_read {
 typedef struct cubic_msg_vm_get_lm {
     int index;
 } cubic_msg_vm_get_lm;
+
+typedef struct cubic_msg_power_wakelock_set {
+    char func_id[CUBIC_FUNC_DESC_MAX];
+} cubic_msg_power_wakelock_set;
+
+typedef cubic_msg_power_wakelock_set cubic_msg_power_wakelock_clear;
 
 
 typedef enum CubicMessage {
@@ -212,6 +219,8 @@ typedef enum CubicMessage {
     CUBIC_MSG_GPS_SET_GEOFENCE,
     CUBIC_MSG_GPS_ENABLE,
     CUBIC_MSG_GPS_DISABLE,
+    CUBIC_MSG_GPS_HOT_START,
+    CUBIC_MSG_GPS_HOT_STOP,
 
     // received by BAT
 
@@ -234,6 +243,8 @@ typedef enum CubicMessage {
     CUBIC_MSG_LIGHT_SLEEP_FLASH,
     CUBIC_MSG_LIGHT_DO_VIBRATE,
 
+    CUBIC_MSG_LIGHT_STAT_OFF_ON,
+    CUBIC_MSG_LIGHT_STAT_OFF_OFF,
     CUBIC_MSG_LIGHT_STAT_RESTORING_ON,
     CUBIC_MSG_LIGHT_STAT_RESTORING_OFF,
     CUBIC_MSG_LIGHT_STAT_BOOTING_ON,
@@ -303,6 +314,9 @@ typedef enum CubicMessage {
     CUBIC_MSG_VM_GET_LM,   //struct argument
     CUBIC_MSG_VM_SEND,     //struct argument
 
+	//received by Power
+	CUBIC_MSG_POWER_WAKELOCK_SET,   //struct argument
+	CUBIC_MSG_POWER_WAKELOCK_CLEAR, //struct argument
 
     // keep this at last possition
     CUBIC_MSG_TOTAL,
@@ -321,6 +335,21 @@ typedef enum CubicMessage {
 #define CUBIC_APP_NAME_LIT_SERVICE          "LightService"
 #define CUBIC_APP_NAME_SND_SERVICE          "SoundService"
 #define CUBIC_APP_NAME_VM_SERVICE           "VMService"
+#define CUBIC_APP_NAME_PWR_SERVICE          "PowerService"
 
+
+#define CUBIC_WAKELOCK_ID_EVENT             "event"
+#define CUBIC_WAKELOCK_ID_VM_UPLOAD         "upload"
+#define CUBIC_WAKELOCK_ID_VM_DOWNLOAD       "download"
+#define CUBIC_WAKELOCK_ID_VM_UNREAD         "unread"
+#define CUBIC_WAKELOCK_ID_SOUND_PLAY        "sound_play"
+#define CUBIC_WAKELOCK_ID_SOUND_RECORD      "srec"
+#define CUBIC_WAKELOCK_ID_BT                "bt"
+#define CUBIC_WAKELOCK_ID_CHARGE   	        "charge"
+#define CUBIC_WAKELOCK_ID_JOINGROUP	        "join_group"
+#define CUBIC_WAKELOCK_ID_POWER_ACT	        "pwr_act"
+#define CUBIC_WAKELOCK_ID_REPORT_TRACK      "rpt_track"
+#define CUBIC_WAKELOCK_ID_LEAVE_MSG         "lm"
+#define CUBIC_WAKELOCK_ID_SLEEP_FLASH       "sleep_flash"
 
 #endif //_CUBIC_MSG_H_

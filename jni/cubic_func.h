@@ -84,6 +84,14 @@
 #define CubicKillTimer(n_timer_id) \
     CTimer::killTimer(n_timer_id)
 
+#define CubicSetAbsTimer( ms, timer ) \
+    CAbsTimer::setTimer(ms, timer)
+
+#define CubicSetAbsTimerInterval( ms, timer ) \
+    CAbsTimer::setTimerInterval(ms, timer)
+
+#define CubicKillAbsTimer(n_timer_id) \
+    CAbsTimer::killTimer(n_timer_id)
 
 
 /**
@@ -164,5 +172,14 @@
 
 #define CubicStatSet(strKey, strValue) \
     CFramework::GetInstance().GetShareStatus().set(strKey, strValue)
+
+/**
+ * wake lock
+ */
+#define CubicWakeupLockSet(funcid) \
+	CFramework::GetInstance().setWakeupLock(funcid)
+
+#define CubicWakeupLockClear(funcid) \
+	CFramework::GetInstance().clearWakeupLock(funcid)
 
 #endif //_CUBIC_FUNC_H

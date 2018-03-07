@@ -12,6 +12,7 @@
 #include "CConfig.cc"
 #include "CMessager.cc"
 #include "CTimer.cc"
+#include "CAbsTimer.cc"
 #include "CLogger.cc"
 #include "CCoreWatch.cc"
 #include "CShareStatus.cc"
@@ -182,6 +183,24 @@ public:
     CShareStatus &GetShareStatus() {
         return m_stat;
     }
+
+	void setWakeupLock( const string &func_id) {
+		cubic_msg_power_wakelock_set arg;
+		strncpy( arg.func_id, func_id.c_str(), CUBIC_FUNC_DESC_MAX );
+		m_messager.postRequest(
+			CUBIC_APP_NAME_PWR_SERVICE,
+			CUBIC_MSG_POWER_WAKELOCK_SET,
+			arg );
+	}
+
+	void clearWakeupLock( const string &func_id ) {
+		cubic_msg_power_wakelock_clear arg;
+		strncpy( arg.func_id, func_id.c_str(), CUBIC_FUNC_DESC_MAX );
+		m_messager.postRequest(
+			CUBIC_APP_NAME_PWR_SERVICE,
+			CUBIC_MSG_POWER_WAKELOCK_CLEAR,
+			arg );
+	}
 };
 
 static void main_quit( int sig )

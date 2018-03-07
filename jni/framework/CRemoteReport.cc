@@ -1172,8 +1172,9 @@ public:
 			string url = resp_dom["url"].GetString();
 			LOGD("updata app, start download apk ,url=%s",url.c_str() );
 			//OtaAppService::loadApk(url);
-			downloadApk(url);
-			return resp;
+			//	downloadApk(url);
+			return url;
+			//return resp;
 		}
 		return resp;
 	};
