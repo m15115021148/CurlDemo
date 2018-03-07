@@ -111,7 +111,11 @@ include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libcubic
-LOCAL_SRC_FILES := Cubic.cpp 	
+LOCAL_SRC_FILES :=  onload.cpp \
+					JNIHelp.cpp \
+					Cubic.cpp \
+					Test.cpp 
+
 		
 LOCAL_LDLIBS := -llog 
 
@@ -133,7 +137,8 @@ LOCAL_SHARED_LIBRARIES := libui \
 						  libdl \
 						  libhardware_legacy \
 						  libstlport_static \
-						  libz 
+						  libz \
+						  
 						  
 LOCAL_STATIC_LIBRARIES := libcrypto \
 						  libssl \

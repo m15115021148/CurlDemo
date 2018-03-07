@@ -27,7 +27,6 @@ using namespace std;
 #undef CUBIC_LOG_TAG
 #endif //CUBIC_LOG_TAG
 #define CUBIC_LOG_TAG "framework"
-#define LOG_TAG "framework"
 
 class ICubicApp
 {

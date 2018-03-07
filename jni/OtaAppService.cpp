@@ -1,3 +1,4 @@
+#include <jni.h>
 #include "cubic_inc.h"
 #include "CFramework.cc"
 
@@ -15,6 +16,8 @@
 #undef CUBIC_LOG_TAG
 #endif //CUBIC_LOG_TAG
 #define CUBIC_LOG_TAG "OtaAppService"
+
+namespace android {
 
 class OtaAppService : public ICubicApp, public IDownloadThread, public IAbsTimer
 {
@@ -46,14 +49,7 @@ private:
         DownloadThread::getInstance().addNewDownload( remote_url );
     };
 
-	void pollFromServer(const string versionCode){
-        // timer callback is running in standalone thread, just do report here
-        vector<string> vm_list = CRemoteReport::getVMList( CUBIC_VM_READ_LIST_MAX );
-        LOGD( "pollFromServer, got voice message: %d", vm_list.size() );
-
-        for ( size_t i = 0; i < vm_list.size(); i ++ ) {
-            addNewVMtoFetch( vm_list[i] );
-        }
+	void pollFromServer(){
     }
 
 
@@ -63,14 +59,12 @@ public:
         curl_global_init( CURL_GLOBAL_ALL );
         DownloadThread::getInstance().registerUser( this );
         DownloadThread::getInstance().start();
-        UploadThread::getInstance().start();
         return true;
     };
 
     void onDeInit() {
         LOGD( "%s onDeInit", CUBIC_THIS_APP );
         DownloadThread::getInstance().stop();
-        UploadThread::getInstance().stop();
         return;
     };
 
@@ -81,12 +75,7 @@ public:
 
     // interface for IDownloadThread
     virtual void downloadComplete( const string &local_path, int error ) {
-        if( error == 0 ) {
-            moveVMtoUnread( local_path );
-        }
-        else {
             unlink( local_path.c_str() );
-        }
     };
 
     // interface for IAbsTimer
@@ -100,5 +89,17 @@ public:
 	};
 };
 
-IMPLEMENT_CUBIC_APP( VMService )
+//IMPLEMENT_CUBIC_APP( OtaAppService )
 
+
+/*
+ * Class:     getVoiceMessageList
+ * Method:    meig_getVoiceMessageList
+ * Signature: (II)I 
+ */
+JNIEXPORT jstring JNICALL meig_test(JNIEnv *env, jclass type, jstring group_uuid) {
+	return group_uuid;
+};
+
+
+};
