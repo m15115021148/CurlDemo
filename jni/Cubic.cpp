@@ -2,21 +2,14 @@
 #include <string.h>
 #include "cubic_inc.h"
 #include "CRemoteReport.cc"
-#include "CMessager.cc"
-#include "CCoreWatch.cc"
-#include "CShareStatus.cc"
-#include "CSafeQueue.cc"
-#include "CConfig.cc"
 #include "CUtil.cc"
-#include "CLogger.cc"
 #include <stdio.h>
-#include "DownloadThread.cc"
+#include "CFramework.cc"
 
 #ifdef CUBIC_LOG_TAG
 #undef CUBIC_LOG_TAG
 #endif //CUBIC_LOG_TAG
 #define CUBIC_LOG_TAG "Cubic" 
-#define LOG_TAG "Cubic"
 
 #define UNUSED_ARG(arg) (void)arg
 #define CUBIC_APP_SERVER_URL 				"https://www.meigelink.com/meiglink/api/v1"
