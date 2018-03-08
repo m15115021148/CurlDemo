@@ -113,8 +113,9 @@ include $(CLEAR_VARS)
 LOCAL_MODULE := libcubic
 LOCAL_SRC_FILES :=  onload.cpp \
 					JNIHelp.cpp \
-					Cubic.cpp \
-					Test.cpp 
+					CoreApp.cpp \
+					Test.cpp \
+					
 
 		
 LOCAL_LDLIBS := -llog 

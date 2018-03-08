@@ -20,8 +20,8 @@
 #define LOG_TAG "onload"
 
 namespace android {
+	int register_CoreApp(JNIEnv* env);
 	int register_Test(JNIEnv* env);
-	int register_Cubic(JNIEnv* env);
 };
 
 using namespace android;
@@ -36,10 +36,8 @@ extern "C" jint JNI_OnLoad(JavaVM* vm, void* /* reserved */)
         return result;
     }
 
-
-    register_Test(env);
-	register_Cubic(env);
-
+	register_CoreApp(env);
+	register_Test(env);
 
     return JNI_VERSION_1_4;
 }
