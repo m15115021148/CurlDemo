@@ -17,7 +17,10 @@
 #include "jni.h"
 #include "cubic_inc.h"
 
-#define LOG_TAG "onload"
+#ifdef CUBIC_LOG_TAG
+#undef CUBIC_LOG_TAG
+#endif //CUBIC_LOG_TAG
+#define CUBIC_LOG_TAG  "JNIOnload"
 
 namespace android {
 	int register_CoreApp(JNIEnv* env);

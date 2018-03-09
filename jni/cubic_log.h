@@ -18,16 +18,16 @@
 #define CUBIC_LOG_LEVEL_INFO  3
 
 #define CubicLogE(...) \
-        __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
+        __android_log_print(ANDROID_LOG_ERROR, CUBIC_LOG_TAG, __VA_ARGS__)
 
 #define CubicLogD(...)  \
-        __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
+        __android_log_print(ANDROID_LOG_DEBUG, CUBIC_LOG_TAG, __VA_ARGS__)
 
 #define CubicLogI(...)  \
-        __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
+        __android_log_print(ANDROID_LOG_INFO, CUBIC_LOG_TAG, __VA_ARGS__)
 		
 #define CubicLogW(...)  \
-        __android_log_print(ANDROID_LOG_WARN, LOG_TAG, __VA_ARGS__)
+        __android_log_print(ANDROID_LOG_WARN, CUBIC_LOG_TAG, __VA_ARGS__)
 
 #define LOGE CubicLogE
 #define LOGD CubicLogD

@@ -16,7 +16,10 @@
 
 #include <string>
 
-#define LOG_TAG "onload"
+#ifdef CUBIC_LOG_TAG
+#undef CUBIC_LOG_TAG
+#endif //CUBIC_LOG_TAG
+#define CUBIC_LOG_TAG  "JNIOnload"
 
 extern "C" int jniRegisterNativeMethods(JNIEnv* env, const char* className,
     const JNINativeMethod* gMethods, int numMethods)
