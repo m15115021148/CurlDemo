@@ -226,7 +226,8 @@ private:
     EErrCode setCfg( const string &str_key, const string &str_val ) {
         // is read only
         if( !str_key.find( "ro." ) ) {
-            return ERR_READ_ONLY;
+			// app remove return
+            //return ERR_READ_ONLY;
         }
 
         string path = key2Path( str_key );

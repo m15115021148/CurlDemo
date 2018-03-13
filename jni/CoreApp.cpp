@@ -13,7 +13,8 @@
 #define CUBIC_LOG_TAG "CoreApp" 
 
 #define UNUSED_ARG(arg) (void)arg
-#define CUBIC_APP_SERVER_URL 				"https://www.meigelink.com/meiglink/api/v1"
+//#define CUBIC_APP_SERVER_URL 				"https://www.meigelink.com/meiglink/api/v1"
+#define CUBIC_APP_SERVER_URL				"http://116.62.205.204:7000/meiglink/api/v1"
 #define CUBIC_APP_SIP_DEFAILT_STUN_ADDR 	"120.24.77.212:3478"
 #define CUBIC_APP_SIP_STUN_ADDR 			"120.24.77.212:3478"
 #define CUBIC_APP_SIP_PROTOCOL 				"TLS"
