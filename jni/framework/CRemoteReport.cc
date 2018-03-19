@@ -18,6 +18,9 @@
 #include <iostream>
 #include <sstream>
 #include <rapidjson/document.h>
+#include <rapidjson/writer.h>
+#include <rapidjson/allocators.h>
+#include <rapidjson/stringbuffer.h>
 #include <curl/curl.h>
 #include <curl/easy.h>
 #include <openssl/crypto.h>
@@ -26,6 +29,9 @@
 #include <openssl/evp.h>
 #include <vector>
 #include <iomanip>
+#include <string.h>
+#include <fstream>
+#include <assert.h>
 
 #define CUBIC_REQUEST_APP_KEY "2017fbd152bf43c796219ad494cc010d"
 #define CUBIC_REQUEST_APP_SECRET "22f7f12b2348444aadb8aeb9ecd7a359"
@@ -351,7 +357,7 @@ private:
         curl_easy_setopt( curl, CURLOPT_WRITEDATA, ( void* )&resp_file );
         curl_easy_setopt( curl, CURLOPT_VERBOSE, 1L );
         curl_easy_setopt( curl, CURLOPT_DEBUGFUNCTION, CurlDebugCallback );
-        curl_easy_setopt( curl, CURLOPT_TIMEOUT, 55 );
+        curl_easy_setopt( curl, CURLOPT_TIMEOUT, 60 );
         curl_easy_setopt( curl, CURLOPT_AUTOREFERER, 1 );
         curl_easy_setopt( curl, CURLOPT_FOLLOWLOCATION, 1 );
         curl_easy_setopt( curl, CURLOPT_MAXREDIRS, 1 );
@@ -1149,17 +1155,17 @@ public:
         return 0;
     };
 
-	static string updateApp(const string &versionCode , const string &fpath){
+	static string updateApp(const string &versionCode){
 		char req[JSON_SIZE_MAX + 4] = {0};
-        	char resp[JSON_SIZE_MAX + 4] = {0};
-        	char addr[PATH_MAX + 4] = {0};
-        	LOGD( "updateApp()" );
+		char resp[JSON_SIZE_MAX + 4] = {0};
+        char addr[PATH_MAX + 4] = {0};
+        LOGD( "updateApp()" );
 		
 		snprintf( addr, PATH_MAX, "%s/ota/version.json?appKey=%s&appSecret=%s&ver=%s", 
-			CubicCfgGetStr( CUBIC_CFG_push_server ).c_str(),
-			CUBIC_REQUEST_APP_KEY ,
-			CUBIC_REQUEST_APP_SECRET,
-			versionCode.c_str() );
+						CubicCfgGetStr( CUBIC_CFG_push_server ).c_str(),
+						CUBIC_REQUEST_APP_KEY ,
+						CUBIC_REQUEST_APP_SECRET,
+						versionCode.c_str() );
 		int ret = sendRequest(  addr, req, resp, JSON_SIZE_MAX );
 		RETNIF_LOGE( ret > 299 || ret < 200, resp, "getDeviceList request refused, http result=%d", ret );
 		LOGD("resp=%s",resp);
@@ -1168,25 +1174,58 @@ public:
 		RETNIF_LOGE( !resp_dom.HasMember( "result" ) || !resp_dom["result"].IsNumber(), "", "updateApp fail, not valid result !" );
 		RETNIF_LOGE( !resp_dom.HasMember( "versionCode" ) || !resp_dom["versionCode"].IsString(), "", "updateApp fail, not valid versionCode !" );
 		RETNIF_LOGE( !resp_dom.HasMember( "url" ) || !resp_dom["url"].IsString(), "", "updateApp fail, not valid url !" );
+		
+		string json;
+		Document doc;
+		doc.SetObject();
+        Document::AllocatorType &allocator = doc.GetAllocator();
 		if(resp_dom["result"].GetInt() == 200 && resp_dom["versionCode"].GetString() > versionCode ){
-			string url = resp_dom["url"].GetString();
-			LOGD("updata app, start download apk ,url=%s",url.c_str() );
-			//OtaAppService::loadApk(url);
-			//	downloadApk(url);
-			return url;
-			//return resp;
+			doc.AddMember( "result", 		200, 													allocator );
+			doc.AddMember( "versionCode", 	Value(resp_dom["versionCode"].GetString(), allocator), 	allocator );
+			doc.AddMember( "downUrl", 		Value(resp_dom["url"].GetString(), allocator), 	allocator );
+		}else {
+			doc.AddMember( "result", 		400, 													allocator );
+			doc.AddMember( "versionCode", 	Value(versionCode.c_str(), allocator) , 				allocator );
+			doc.AddMember( "downUrl", 		Value("", allocator),  									allocator );
 		}
-		return resp;
+		StringBuffer buffer;
+        Writer<StringBuffer> writer( buffer );
+        doc.Accept( writer );
+        json = buffer.GetString();
+		//save content
+		CubicCfgSet(CUBIC_APP_OTA_CACHE, json);
+		return json;
 	};
 
-	static string downloadApk(const string &url ){
+	static string downloadApk(const string &path ){
 		LOGD("downloadApk ...");
-		string fname = "/storage/sdcard0/Meig/";
+		string req ;
+		string fname = path;
+		string url;
+		fname += "/MeigApp/";
+		
+		//create dir
+		if ( !CUtil::mkdirAndParrent( CUtil::getParrentDirOfPath( fname ), S_IRWXU | S_IRWXG | S_IROTH ) ){
+			LOGE("downloadApk, file not created");
+		}
+		
+		//get down url
+		Document doc;
+		req = CubicCfgGetStr(CUBIC_APP_OTA_CACHE);
+		RETNIF_LOGE( doc.Parse<0>( req.c_str() ).HasParseError(), "", "downloadApk error when parse request: %s", req.c_str() );
+		RETNIF_LOGE( !doc.HasMember( "downUrl" ) || !doc["downUrl"].IsString(), "", "downloadApk fail, not valid downUrl !" );
+		RETNIF_LOGE( !doc.HasMember( "result" ) || !doc["result"].IsNumber(), "", "downloadApk fail, not valid result !" );
+		
+		if(doc["result"].GetInt() == 400 && doc["downUrl"].GetString() == NULL ){
+			LOGD("this app is already New,not udapte");
+			return "";
+		}
+		
+		url = doc["downUrl"].GetString();
 		fname += CUtil::getFileNameOfPath( url );
-		LOGD("fname path =%s",fname.c_str() );
 		FILE* file = fopen( fname.c_str(), "w+" );
 		RETNIF_LOGE( file == NULL, "null", "downloadApk failed, file can not open" );
-		int ret = sendRequestFile( url, file, 0x400000 );
+		int ret = sendRequestFile( url, file, 0x9999999999 );
 		fclose( file );
 		if( ret < 0){
 			unlink( fname.c_str() );

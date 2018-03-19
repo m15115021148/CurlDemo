@@ -34,6 +34,7 @@
 #define CUBIC_MSG_SOCK_DIR                  "/var/"
 #define CUBIC_VOICE_MSG_CACHE               "/tmp"
 #define CUBIC_OTA_CACHE          			"/cache"
+#define CUBIC_APP_OTA_CACHE					"/cache/update.json"	
 #define CUBIC_BLE_UPLOAD_LOG_PATH           "/tmp/log.log"
 #define CUBIC_SIP_VOICE_PIPE_SRC            CUBIC_MSG_SOCK_DIR"sip_voice.src.pipe"
 #define CUBIC_SIP_VOICE_PIPE_SINK           CUBIC_MSG_SOCK_DIR"sip_voice.sink.pipe"

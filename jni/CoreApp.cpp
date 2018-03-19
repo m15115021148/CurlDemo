@@ -165,21 +165,8 @@ jint meig_registerUser(JNIEnv *env, jclass type, jstring userName, jstring mac, 
  */
 jstring meig_updateApp(JNIEnv *env, jclass type, jstring versionCode) {
 	string code = CUtil::jstringTostring(env, versionCode);
-
-	jclass envcls = env->FindClass("android/os/Environment");
-//	if (envcls == nullptr) return "";
-	jmethodID id = env->GetStaticMethodID(envcls, "getExternalStorageDirectory", "()Ljava/io/File;"); 
-	jobject fileObj = env->CallStaticObjectMethod(envcls,id,""); 
-	jclass flieClass = env->GetObjectClass(fileObj);
-	jmethodID getpathId = env->GetMethodID(flieClass, "getPath", "()Ljava/lang/String;"); 
-	jstring pathStr = (jstring)env->CallObjectMethod(fileObj,getpathId,"");  
-
-	string path = CUtil::jstringTostring(env, pathStr);
-	LOGD("updateApp download path=%s",path.c_str() );
-	path += "/MeiG/MeiGApp.apk";
-	LOGD("updateApp download path=%s",path.c_str() );
-
-	string down_url = CRemoteReport::updateApp(code, path);
+	string req = CRemoteReport::updateApp(code);
+	
 	/*
 	jclass cls = env->FindClass("com/meigsmart/meigsdklibs/downService/DownService");
 	jobject obj = env->AllocObject(cls);
@@ -192,8 +179,31 @@ jstring meig_updateApp(JNIEnv *env, jclass type, jstring versionCode) {
 	jmethodID down_load = env->GetMethodID(cls, "startDownLoad","(Ljava/lang/String;)V");
 	env->CallVoidMethod(obj, down_load, env->NewStringUTF(down_url.c_str()));
 	*/
-	return env->NewStringUTF(down_url.c_str());
+		
+	return env->NewStringUTF(req.c_str());
 };
+
+/*
+ * Class:     downApp
+ * Method:    downApp
+ * Signature: ()V
+ */
+jstring meig_downApp(JNIEnv *env, jclass type ){
+	jclass envcls = env->FindClass("android/os/Environment");
+	if (envcls == NULL) return env->NewStringUTF("");
+	jmethodID id = env->GetStaticMethodID(envcls, "getExternalStorageDirectory", "()Ljava/io/File;"); 
+	jobject fileObj = env->CallStaticObjectMethod(envcls,id,""); 
+	jclass flieClass = env->GetObjectClass(fileObj);
+	jmethodID getpathId = env->GetMethodID(flieClass, "getPath", "()Ljava/lang/String;"); 
+	jstring pathStr = (jstring)env->CallObjectMethod(fileObj,getpathId,"");  
+
+	string path = CUtil::jstringTostring(env, pathStr);
+	LOGD("updateApp download root path=%s",path.c_str() );
+	
+	string req = CRemoteReport::downloadApk(path);
+		
+	return env->NewStringUTF(req.c_str() );
+}
 
 /*
  * Class:     getVoiceMessageList
@@ -216,6 +226,7 @@ static const JNINativeMethod methodsRx[] = {
 	{"meig_initAppInfo","(Ljava/lang/Object;)I",(void*)meig_initAppInfo },
 	{"meig_updateApp","(Ljava/lang/String;)Ljava/lang/String;",(void*)meig_updateApp },
 	{"meig_getVoiceMessageList","(Ljava/lang/String;)Ljava/lang/String;",(void*)meig_getVoiceMessageList },
+	{"meig_downApp","()Ljava/lang/String;",(void*)meig_downApp },
 };
 
 int register_CoreApp(JNIEnv *env){
@@ -223,4 +234,3 @@ int register_CoreApp(JNIEnv *env){
 }
 
 };
-
