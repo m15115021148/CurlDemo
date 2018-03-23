@@ -198,7 +198,6 @@ jstring meig_downApp(JNIEnv *env, jclass type ){
 	jstring pathStr = (jstring)env->CallObjectMethod(fileObj,getpathId,"");  
 
 	string path = CUtil::jstringTostring(env, pathStr);
-	LOGD("updateApp download root path=%s",path.c_str() );
 	
 	string req = CRemoteReport::downloadApk(path);
 		

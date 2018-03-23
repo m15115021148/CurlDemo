@@ -163,12 +163,12 @@ private:
 	}
 
 	static string getCustomHeader1(){
-                string psw = CubicCfgGetStr( CUBIC_CFG_push_upswd );
-                string x_api_psw = "api_password: ";
-                x_api_psw += psw;
-                LOGD("getCustomHeader1=%s", x_api_psw.c_str() );
-                return x_api_psw;
-        }
+		string psw = CubicCfgGetStr( CUBIC_CFG_push_upswd );
+		string x_api_psw = "api_password: ";
+		x_api_psw += psw;
+		LOGD("getCustomHeader1=%s", x_api_psw.c_str() );
+		return x_api_psw;
+    }
 
     static int CurlDebugCallback(
         CURL* handle,
@@ -357,7 +357,7 @@ private:
         curl_easy_setopt( curl, CURLOPT_WRITEDATA, ( void* )&resp_file );
         curl_easy_setopt( curl, CURLOPT_VERBOSE, 1L );
         curl_easy_setopt( curl, CURLOPT_DEBUGFUNCTION, CurlDebugCallback );
-        curl_easy_setopt( curl, CURLOPT_TIMEOUT, 60 );
+        curl_easy_setopt( curl, CURLOPT_TIMEOUT, 55 );
         curl_easy_setopt( curl, CURLOPT_AUTOREFERER, 1 );
         curl_easy_setopt( curl, CURLOPT_FOLLOWLOCATION, 1 );
         curl_easy_setopt( curl, CURLOPT_MAXREDIRS, 1 );
@@ -1207,6 +1207,7 @@ public:
 		//create dir
 		if ( !CUtil::mkdirAndParrent( CUtil::getParrentDirOfPath( fname ), S_IRWXU | S_IRWXG | S_IROTH ) ){
 			LOGE("downloadApk, file not created");
+			return "";
 		}
 		
 		//get down url
