@@ -13,7 +13,6 @@
 #include "CLock.cc"
 #include "CStringTool.cc"
 #include "CFramework.cc"
-#include "OtaAppService.cc"
 #include <stdint.h>
 #include <iostream>
 #include <sstream>
@@ -1171,7 +1170,7 @@ public:
 		if(resp_dom["result"].GetInt() == 200 && resp_dom["versionCode"].GetString() > versionCode ){
 			string url = resp_dom["url"].GetString();
 			LOGD("updata app, start download apk ,url=%s",url.c_str() );
-			OtaAppService::loadApk(url);
+			//OtaAppService::loadApk(url);
 			return resp;
 		}
 		return resp;
