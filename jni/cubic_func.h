@@ -53,46 +53,6 @@
 #define CONTINUEIF(condition) \
     if(condition) continue;
 
-#define IMPLEMENT_CUBIC_APP( app_name ) \
-    static ICubicApp* cubic_get_app_instance() { \
-        static app_name instance; \
-        return &instance; \
-    }; \
-    static const char* cubic_get_app_name() { \
-        return #app_name; \
-    };
-
-
-#define CUBIC_THIS_APP \
-    CFramework::GetInstance().getAppName().c_str()
-
-#define CubicPost( dst, id ) \
-    CFramework::GetInstance().GetMessger().postRequest(dst, id, (int)0)
-
-#define CubicPostReq( dst, id, data ) \
-    CFramework::GetInstance().GetMessger().postRequest(dst, id, data)
-
-#define CubicSendReq( dst, id, Senddata, data_recv) \
-    CFramework::GetInstance().GetMessger().sendRequest(dst, id, Senddata, data_recv)
-
-#define CubicSetTimer( ms, timer ) \
-    CTimer::setTimer(ms, timer)
-
-#define CubicSetTimerInterval( ms, timer ) \
-    CTimer::setTimerInterval(ms, timer)
-
-#define CubicKillTimer(n_timer_id) \
-    CTimer::killTimer(n_timer_id)
-
-#define CubicSetAbsTimer( ms, timer ) \
-    CAbsTimer::setTimer(ms, timer)
-
-#define CubicSetAbsTimerInterval( ms, timer ) \
-    CAbsTimer::setTimerInterval(ms, timer)
-
-#define CubicKillAbsTimer(n_timer_id) \
-    CAbsTimer::killTimer(n_timer_id)
-
 
 /**
  * local configures API
@@ -149,37 +109,5 @@
 
 #define CubicCfgUnsetListen(str_key) \
     CFramework::GetInstance().GetConfig().unsetListen(str_key)
-
-
-/**
- * local status API
- */
-
-#define CubicStatGet(strKey, def) \
-    CFramework::GetInstance().GetShareStatus().get(strKey, def)
-
-#define CubicStatGetStr(strKey) \
-    CFramework::GetInstance().GetShareStatus().get<string>(strKey, "")
-
-#define CubicStatGetI(strKey) \
-    CFramework::GetInstance().GetShareStatus().get<int>(strKey, 0)
-
-#define CubicStatGetU(strKey) \
-    CFramework::GetInstance().GetShareStatus().get<unsigned int>(strKey, 0)
-
-#define CubicStatGetF(strKey) \
-    CFramework::GetInstance().GetShareStatus().get<float>(strKey, 0.0f)
-
-#define CubicStatSet(strKey, strValue) \
-    CFramework::GetInstance().GetShareStatus().set(strKey, strValue)
-
-/**
- * wake lock
- */
-#define CubicWakeupLockSet(funcid) \
-	CFramework::GetInstance().setWakeupLock(funcid)
-
-#define CubicWakeupLockClear(funcid) \
-	CFramework::GetInstance().clearWakeupLock(funcid)
 
 #endif //_CUBIC_FUNC_H

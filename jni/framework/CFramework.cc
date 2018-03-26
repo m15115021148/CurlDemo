@@ -10,9 +10,6 @@
 #define _CFRAMEWORK_CC_ 1
 
 #include "CConfig.cc"
-#include "CTimer.cc"
-#include "CAbsTimer.cc"
-#include "CLogger.cc"
 #include "cubic_inc.h"
 
 #include <signal.h>
@@ -24,43 +21,17 @@ using namespace std;
 #endif //CUBIC_LOG_TAG
 #define CUBIC_LOG_TAG "framework"
 
-class ICubicApp
-{
-public:
-    virtual ~ICubicApp() {};
-
-    virtual bool onInit() {
-        return true;
-    };
-
-    virtual void onDeInit() {
-        return;
-    };
-
-    virtual int onMessage( const string &str_src_app_name, int n_msg_id, const void* p_data ) = 0;
-};
-
-
-
-static ICubicApp* cubic_get_app_instance();
-static const char* cubic_get_app_name();
 
 class CFramework
 {
-public:
-    static const int MESSAGE_POP_WAIT = 1000; // ms
-
 private:
-    
     CConfig      m_config;
-    CLogger      m_logger;
 
     bool mb_initAppOk;
     bool mb_stopPump;
 
     CFramework()
         : m_config( CUBIC_CONFIG_ROOT_PATH )
-        , m_logger( cubic_get_app_name() )
         , mb_initAppOk( false )
         , mb_stopPump( true )
     {};
@@ -79,46 +50,28 @@ public:
         if( mb_initAppOk ) {
             return true;
         }
-		LOGD("init ..%s",CUBIC_THIS_APP );
-        // load config
-        int n_level_limit = 0;
-        n_level_limit = m_config.get( CUBIC_CFG_log_level_limit, ( int )CUBIC_LOG_LEVEL_DEBUG );
-        m_logger.setLevelLimit( n_level_limit ); 
-        // init app
-        RETNIF_LOGE( cubic_get_app_instance() == NULL, false, "App instance is null" );
-        RETNIF_LOGE( !cubic_get_app_instance()->onInit(), false, "App init return false" );
+		LOGD("init .." );
+        
         mb_initAppOk = true;
         return true;
     };
 
     void deinit() {
-        // deinit app
-        if( cubic_get_app_instance() ) { cubic_get_app_instance()->onDeInit(); }
+        
     };
 
     void onMessage( int n_session_id, const string &str_src_app_name, int n_msg_id, const void* p_data ) {
         
     };
 
-    void pumpMessage() {
-        
-    };
 
     void stop() {
         CubicLogD( "framework stop" );
         mb_stopPump = true;
     };
 
-    string getAppName() {
-        return ( string )cubic_get_app_name();
-    };
-
     CConfig &GetConfig() {
         return m_config;
-    };
-
-    CLogger &getLoger() {
-        return m_logger;
     };
 
 };
