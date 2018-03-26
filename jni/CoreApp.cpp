@@ -14,52 +14,6 @@
 
 #define UNUSED_ARG(arg) (void)arg
 #define CUBIC_APP_SERVER_URL				"http://116.62.205.204:7000/meiglink/api/v1"
-#define CUBIC_APP_RELEASE_SIGN				"308203733082025ba00302010202046e946da7300d06092a864886f70d01010b0500306a310d300b06035504061304313131313111300f060355040813087368616e676861693111300f060355040713087368616e67686169310f300d060355040a0c06e7be8ee6a0bc310f300d060355040b0c06e7be8ee6a0bc3111300f060355040313086d6569676c696e6b301e170d3138303330353032343130345a170d3438303232363032343130345a306a310d300b06035504061304313131313111300f060355040813087368616e676861693111300f060355040713087368616e67686169310f300d060355040a0c06e7be8ee6a0bc310f300d060355040b0c06e7be8ee6a0bc3111300f060355040313086d6569676c696e6b30820122300d06092a864886f70d01010105000382010f003082010a0282010100901deea070d5c8d9e9f37cb3d0037d5830cec1fc76d079cdd1b8a39f67eb61acc486ad0402c3368468adf978dbd0be66c21a812543cb716ba401514f52c485ee126f3b4fa982479e9f90707e4a2c2f96e0e1019188cc44aa372407bab6a6f7a0cb98e6982f77543c1f8cdd85a75ccd073a2b5a9bd006d479aa46c1643e4dd2a5a5a1c1a6ac4799086a6ba6979d2e8f6510ca1ee63f3f6cd68b7dbec4ce028a81ed0c95ee6b9a7c0000ad731142b162b4be10f081dff2a7fe510d5688747d9cc71d2c1285a8ecca2acbc7f73a1244d9de3ba3584152d0f0bf98ae92c6e7e26b1bc8fbabb5bbaff0407f42443b1e20e437dd085eaf27807efdf9d49f62ecfecd9f0203010001a321301f301d0603551d0e041604141d1c4ee78436acdcc7de0ec5e28405589a2b6bb2300d06092a864886f70d01010b050003820101002da65470be1e946ce02e8e4c95ab1e6543ac1471c9b4eada9d65825c68da8064a4d1d55fadbd510c81d43d468f74f89780e0f13c3d21e601d25e29b0c906f31e4f7a849757464e25ca34d300c1f30d3c7053e31fc66175e95992466bb58c8a89c088b6716e39c711ae245c679e93a7fd121d56eb287584bc311af30e5b8eebec67326671588f35dd3e4a191be531a9c4a72958338ef4cd94ad7c99060a8ab45be20ab91e6e34a9979e63832d26af312d3e171dc22d79bbc0dc8acd81101c91f1ea1dd47fd069783efe686b79877721b1ac0d52f922b6db5479d2b8a88a4af1da698029e75ccf43bb44489f462a30cd9149d532bcac128e13a19b1180a7b7595d"
-
-using namespace std;
-
-class CoreApp : public ICubicApp
-{
-public :
-	virtual ~CoreApp()
-    {};
-
-    static CoreApp &getInstance() {
-        static CoreApp instance;
-        return instance;
-    };
-
-	// interface of ICubicApp
-    bool onInit() {
-		LOGD("onInit %s",CUBIC_THIS_APP );
-        return true;
-    };
-
-    // interface of ICubicApp
-    void onDeInit() {
-        LOGD( "onDeInit" );
-        return;
-    };
-	
-	// interface of ICubicApp
-    virtual int onMessage( const string &str_src_app_name, int n_msg_id, const void* p_data ) {
-        LOGE( "n_msg_id:<%d>", n_msg_id );
-        return 0;
-    };
-	
-};
-
-// IMPLEMENT_CUBIC_APP(CoreApp)
-static ICubicApp* cubic_get_app_instance()
-{
-    return &CoreApp::getInstance();
-};
-static const char* cubic_get_app_name()
-{
-    return "CoreApp";
-};
-
-//------------------------------------jni methods-------------------------------------------------------
 
 namespace android {
 /*
@@ -92,16 +46,11 @@ jint meig_initAppInfo(JNIEnv *env, jclass type , jobject obj ) {
     jstring str = static_cast<jstring>(env->CallObjectMethod(signature_obj, string_id));
     char *c_msg = (char*)env->GetStringUTFChars(str,0);
     
-    if(strcmp(c_msg,CUBIC_APP_RELEASE_SIGN)==0){//签名一致  返回合法的 api key，否则返回错误
-		string packName  = CUtil::jstringTostring(env,pkg_str);
-		CubicCfgSetRootPath(packName);
-        CubicCfgSet(CUBIC_CFG_push_server,CUBIC_APP_SERVER_URL);
-       
-        return 0;
-    }else{
-        return 404;
-	}
-
+    string packName  = CUtil::jstringTostring(env,pkg_str);
+	CubicCfgSetRootPath(packName);
+    CubicCfgSet(CUBIC_CFG_push_server,CUBIC_APP_SERVER_URL);
+	
+	return 0;
 };
 
 /*
@@ -155,14 +104,14 @@ jstring meig_downApp(JNIEnv *env, jclass type ){
 //------------------------------------jni loaded----------------------------------------------------------
 
 static const JNINativeMethod methodsRx[] = { 
-	{"meig_registerUser", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)I", (void*)meig_registerUser },
-	{"meig_initAppInfo","(Ljava/lang/Object;)I",(void*)meig_initAppInfo },
-	{"meig_updateApp","(Ljava/lang/String;)Ljava/lang/String;",(void*)meig_updateApp },
-	{"meig_downApp","()Ljava/lang/String;",(void*)meig_downApp },
+	{"register", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)I", (void*)meig_registerUser },
+	{"init","(Ljava/lang/Object;)I",(void*)meig_initAppInfo },
+	{"updateApp","(Ljava/lang/String;)Ljava/lang/String;",(void*)meig_updateApp },
+	{"downApp","()Ljava/lang/String;",(void*)meig_downApp },
 };
 
 int register_CoreApp(JNIEnv *env){
-	return jniRegisterNativeMethods(env, "com/meigsmart/meigsdklibs/jni/CubicUtil", methodsRx, NELEM(methodsRx) );
+	return jniRegisterNativeMethods(env, "com/meigsmart/meigota/MeigOtaService", methodsRx, NELEM(methodsRx) );
 }
 
 };
