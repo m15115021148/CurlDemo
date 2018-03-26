@@ -153,7 +153,7 @@ jint meig_registerUser(JNIEnv *env, jclass type, jstring userName, jstring mac, 
 	int ret = CRemoteReport::activate(u_name, code, name );
 	if(ret == 0){
 		LOGD("sip register start ...........");
-		CubicPost( CUBIC_APP_NAME_SIP_SERVICE, CUBIC_MSG_SIP_REGISTER );
+		CubicPost( CUBIC_APP_NAME_CORE, CUBIC_MSG_SIP_REGISTER );
 	}
 	return ret;
 };
