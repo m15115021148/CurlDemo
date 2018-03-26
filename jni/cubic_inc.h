@@ -13,7 +13,6 @@
 #include "cubic_func.h"
 #include "cubic_log.h"
 #include "cubic_configs.h"
-#include "cubic_status.h"
 #include "cubic_msg.h"
 
 

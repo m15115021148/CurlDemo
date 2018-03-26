@@ -1,5 +1,5 @@
 LOCAL_PATH := $(call my-dir)
-APP_MODULES := libcubic
+APP_MODULES := libMeigOta
 #APP_STL := stlport_static
 APP_STL := gnustl_static
 APP_OPTIM := release

@@ -24,7 +24,6 @@
 
 namespace android {
 	int register_CoreApp(JNIEnv* env);
-	int register_Test(JNIEnv* env);
 };
 
 using namespace android;
@@ -40,7 +39,6 @@ extern "C" jint JNI_OnLoad(JavaVM* vm, void* /* reserved */)
     }
 
 	register_CoreApp(env);
-	register_Test(env);
 
     return JNI_VERSION_1_4;
 }

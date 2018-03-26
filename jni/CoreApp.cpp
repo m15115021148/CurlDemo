@@ -125,21 +125,6 @@ jint meig_initAppInfo(JNIEnv *env, jclass type , jobject obj ) {
 };
 
 /*
- * Class:     getDeviceList
- * Method:    test
- * Signature: (II)I 
- */
-jstring meig_getDeviceList(JNIEnv *env, jclass type) {
-//	string weburl = CUtil::jstringTostring(env,jstr);
-	
-	string str = CRemoteReport::getDeviceList();
-	
-	//string ---> jstring   env->NewStringUTF(str.c_str())
-	return env->NewStringUTF(str.c_str()); 
-	
-};
-
-/*
  * Class:     registerUser
  * Method:    test
  * Signature: (II)I 
@@ -204,27 +189,13 @@ jstring meig_downApp(JNIEnv *env, jclass type ){
 	return env->NewStringUTF(req.c_str() );
 }
 
-/*
- * Class:     getVoiceMessageList
- * Method:    meig_getVoiceMessageList
- * Signature: (II)I 
- */
-jstring meig_getVoiceMessageList(JNIEnv *env, jclass type, jstring group_uuid) {
-	string j_group_uuid  = CUtil::jstringTostring(env,group_uuid);
-	CubicCfgSet(CUBIC_CFG_push_group,j_group_uuid);
-	CRemoteReport::getVMList(10);
-	return group_uuid;
-};
-
 
 //------------------------------------jni loaded----------------------------------------------------------
 
 static const JNINativeMethod methodsRx[] = { 
-	{"meig_getDeviceList", "()Ljava/lang/String;", (void*)meig_getDeviceList },
 	{"meig_registerUser", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)I", (void*)meig_registerUser },
 	{"meig_initAppInfo","(Ljava/lang/Object;)I",(void*)meig_initAppInfo },
 	{"meig_updateApp","(Ljava/lang/String;)Ljava/lang/String;",(void*)meig_updateApp },
-	{"meig_getVoiceMessageList","(Ljava/lang/String;)Ljava/lang/String;",(void*)meig_getVoiceMessageList },
 	{"meig_downApp","()Ljava/lang/String;",(void*)meig_downApp },
 };
 
