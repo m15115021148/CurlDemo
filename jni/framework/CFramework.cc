@@ -10,13 +10,9 @@
 #define _CFRAMEWORK_CC_ 1
 
 #include "CConfig.cc"
-#include "CMessager.cc"
 #include "CTimer.cc"
 #include "CAbsTimer.cc"
 #include "CLogger.cc"
-#include "CCoreWatch.cc"
-#include "CShareStatus.cc"
-#include "CSafeQueue.cc"
 #include "cubic_inc.h"
 
 #include <signal.h>
@@ -63,10 +59,7 @@ private:
     } TMessage;
 
     CConfig      m_config;
-    CMessager    m_messager;
     CLogger      m_logger;
-    CCoreWatch   m_watch;
-    CShareStatus m_stat;
 
 
     bool mb_initAppOk;
@@ -75,10 +68,7 @@ private:
 
     CFramework()
         : m_config( CUBIC_CONFIG_ROOT_PATH )
-        , m_messager( cubic_get_app_name() )
         , m_logger( cubic_get_app_name() )
-        , m_watch( cubic_get_app_name() )
-        , m_stat( cubic_get_app_name() )
         , mb_initAppOk( false )
         , mb_stopPump( true )
         , m_message_box()
@@ -175,31 +165,6 @@ public:
         return m_logger;
     };
 
-    CMessager &GetMessger() {
-        return m_messager;
-    }
-
-    CShareStatus &GetShareStatus() {
-        return m_stat;
-    }
-
-	void setWakeupLock( const string &func_id) {
-		cubic_msg_power_wakelock_set arg;
-		strncpy( arg.func_id, func_id.c_str(), CUBIC_FUNC_DESC_MAX );
-		m_messager.postRequest(
-			CUBIC_APP_NAME_PWR_SERVICE,
-			CUBIC_MSG_POWER_WAKELOCK_SET,
-			arg );
-	}
-
-	void clearWakeupLock( const string &func_id ) {
-		cubic_msg_power_wakelock_clear arg;
-		strncpy( arg.func_id, func_id.c_str(), CUBIC_FUNC_DESC_MAX );
-		m_messager.postRequest(
-			CUBIC_APP_NAME_PWR_SERVICE,
-			CUBIC_MSG_POWER_WAKELOCK_CLEAR,
-			arg );
-	}
 };
 
 static void main_quit( int sig )
