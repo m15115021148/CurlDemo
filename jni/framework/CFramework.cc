@@ -45,33 +45,24 @@ public:
 static ICubicApp* cubic_get_app_instance();
 static const char* cubic_get_app_name();
 
-class CFramework : public IMsgListener
+class CFramework
 {
 public:
     static const int MESSAGE_POP_WAIT = 1000; // ms
 
 private:
-    typedef struct Message {
-        int n_session_id;
-        string str_src_app_name;
-        int n_msg_id;
-        unsigned char data[CMessager::MAX_MESSAGE_SIZE];
-    } TMessage;
-
+    
     CConfig      m_config;
     CLogger      m_logger;
 
-
     bool mb_initAppOk;
     bool mb_stopPump;
-    CSafeQueue<TMessage> m_message_box;
 
     CFramework()
         : m_config( CUBIC_CONFIG_ROOT_PATH )
         , m_logger( cubic_get_app_name() )
         , mb_initAppOk( false )
         , mb_stopPump( true )
-        , m_message_box()
     {};
 
     ~CFramework()
@@ -92,60 +83,25 @@ public:
         // load config
         int n_level_limit = 0;
         n_level_limit = m_config.get( CUBIC_CFG_log_level_limit, ( int )CUBIC_LOG_LEVEL_DEBUG );
-        m_logger.setLevelLimit( n_level_limit );
-        // setup message listener
-        RETNIF_LOGE( CMessager::ERR_NO_ERROR != m_messager.startListen( this ), false,  "setup fail to start message listen !" );
-        m_watch.feed();
+        m_logger.setLevelLimit( n_level_limit ); 
         // init app
         RETNIF_LOGE( cubic_get_app_instance() == NULL, false, "App instance is null" );
         RETNIF_LOGE( !cubic_get_app_instance()->onInit(), false, "App init return false" );
         mb_initAppOk = true;
-        m_watch.feed();
         return true;
     };
 
     void deinit() {
         // deinit app
         if( cubic_get_app_instance() ) { cubic_get_app_instance()->onDeInit(); }
-
-        // stop message listener
-        m_messager.stopListen();
     };
 
     void onMessage( int n_session_id, const string &str_src_app_name, int n_msg_id, const void* p_data ) {
-        TMessage message;
-        message.n_session_id = n_session_id;
-        message.n_msg_id = n_msg_id;
-        message.str_src_app_name = str_src_app_name;
-        memcpy( message.data, p_data, CMessager::MAX_MESSAGE_SIZE );
-        // just push it to queue
-        m_message_box.push( message );
+        
     };
 
     void pumpMessage() {
-        mb_stopPump = false;
-        // pop up message
-        TMessage message;
-        CSafeQueue<TMessage>::EErrCode err;
-        int ret;
-        CubicLogD( "framework pumpMessage" );
-
-        while( !mb_stopPump ) {
-            ret = -1;
-            err = m_message_box.pop( message, MESSAGE_POP_WAIT );
-            m_watch.feed();
-            CONTINUEIF( err != CSafeQueue<TMessage>::ERR_NO_ERROR );
-
-            if( cubic_get_app_instance() ) {
-                ret = cubic_get_app_instance()->onMessage( message.str_src_app_name, message.n_msg_id, message.data );
-            }
-            else {
-                usleep( 10000 );
-                ret = 0;
-            }
-
-            m_messager.response( message.n_session_id, message.str_src_app_name, message.n_msg_id, ret );
-        }
+        
     };
 
     void stop() {
@@ -207,8 +163,6 @@ int main( int argc, const char* argv[] )
         return -1;
     }
 
-    // start message pump
-    CFramework::GetInstance().pumpMessage();
     // deinit framwork
     CFramework::GetInstance().deinit();
     return 0;
