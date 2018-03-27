@@ -493,7 +493,7 @@ public:
 		fname += CUtil::getFileNameOfPath( url );
 		FILE* file = fopen( fname.c_str(), "w+" );
 		RETNIF_LOGE( file == NULL, "null", "downloadApk failed, file can not open" );
-		int ret = sendRequestFile( url, file, 0x9999999999 );
+		int ret = sendRequestFile( url, file, 0xFFFFFF );
 		fclose( file );
 		if( ret < 0){
 			unlink( fname.c_str() );

@@ -1,21 +1,57 @@
 #include <jni.h>
-#include "JNIHelp.h"
 #include "cubic_inc.h"
 #include <stdio.h>
 #include <string.h>
+#include <rapidjson/document.h>
 #include "CUtil.cc"
 #include "CRemoteReport.cc"
 #include "CFramework.cc"
+#include "DownloadThread.cc"
 
 #ifdef CUBIC_LOG_TAG
 #undef CUBIC_LOG_TAG
 #endif //CUBIC_LOG_TAG
 #define CUBIC_LOG_TAG "CoreApp" 
 
-#define UNUSED_ARG(arg) (void)arg
 #define CUBIC_APP_SERVER_URL				"http://116.62.205.204:7000/meiglink/api/v1"
 
-namespace android {
+class CoreApp : public IDownloadThread
+{
+public :
+	virtual ~CoreApp()
+    {};
+
+    static CoreApp &getInstance() {
+        static CoreApp instance;
+        return instance;
+    };
+
+    bool onInit() {
+		LOGD("onInit");
+        return true;
+    };
+
+    void onDeInit() {
+        LOGD( "onDeInit" );
+        return;
+    };
+	
+	void onStartDownloadApk(const string &rootPath){
+		DownloadThread::getInstance().registerUser( this );
+		DownloadThread::getInstance().start();		
+		DownloadThread::getInstance().addNewDownload(rootPath);
+	};
+	
+	
+	
+	
+	// interface for IDownloadThread
+    virtual void downloadComplete( const string &local_path, int error ) {
+        LOGD("downloadComplete local_path=%s",local_path.c_str() );
+    };
+
+};
+
 /*
  * Class:     init
  * Method:    initAppInfo
@@ -73,10 +109,20 @@ jint meig_registerUser(JNIEnv *env, jclass type, jstring userName, jstring mac, 
  * Method:    updateApp
  * Signature: (II)I 
  */
-jstring meig_updateApp(JNIEnv *env, jclass type, jstring versionCode) {
+jint meig_updateApp(JNIEnv *env, jclass type, jstring versionCode) {
 	string code = CUtil::jstringTostring(env, versionCode);
-	string req = CRemoteReport::updateApp(code);		
-	return env->NewStringUTF(req.c_str());
+	string req = CRemoteReport::updateApp(code);
+
+	Document doc;
+	RETNIF_LOGE( doc.Parse<0>( req.c_str() ).HasParseError(), -1, "updateApp error when parse request: %s", req.c_str() );
+	RETNIF_LOGE( !doc.HasMember( "result" ) || !doc["result"].IsNumber(), -1, "updateApp fail, not valid result !" );
+	
+	if(doc["result"].GetInt() == 200){
+		LOGD("There is the latest app update");
+		return 1;
+	}
+		
+	return 0;
 };
 
 /*
@@ -95,23 +141,89 @@ jstring meig_downApp(JNIEnv *env, jclass type ){
 
 	string path = CUtil::jstringTostring(env, pathStr);
 	
-	string req = CRemoteReport::downloadApk(path);
-		
-	return env->NewStringUTF(req.c_str() );
+	CoreApp::getInstance().onStartDownloadApk(path);
+			
+	return env->NewStringUTF(path.c_str() );
 }
+
 
 
 //------------------------------------jni loaded----------------------------------------------------------
+JNIEXPORT const char *classPathNameRx = "com/meigsmart/meigota/MeigOtaService";
 
-static const JNINativeMethod methodsRx[] = { 
+static JNINativeMethod methodsRx[] = { 
 	{"register", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)I", (void*)meig_registerUser },
 	{"init","(Ljava/lang/Object;)I",(void*)meig_initAppInfo },
-	{"updateApp","(Ljava/lang/String;)Ljava/lang/String;",(void*)meig_updateApp },
+	{"updateApp","(Ljava/lang/String;)I",(void*)meig_updateApp },
 	{"downApp","()Ljava/lang/String;",(void*)meig_downApp },
 };
 
-int register_CoreApp(JNIEnv *env){
-	return jniRegisterNativeMethods(env, "com/meigsmart/meigota/MeigOtaService", methodsRx, NELEM(methodsRx) );
+static jint registerNativeMethods(JNIEnv* env, const char* className,JNINativeMethod* gMethods, int numMethods)
+{
+    jclass clazz;
+
+    clazz = env->FindClass(className);
+    if (env->ExceptionCheck()) {
+        env->ExceptionDescribe();
+        env->ExceptionClear();
+    }
+    if (clazz == NULL) {
+        LOGE("Native registration unable to find class '%s'", className);
+        return JNI_FALSE;
+    }
+    if (env->RegisterNatives(clazz, gMethods, numMethods) < 0) {
+        LOGE("RegisterNatives failed for '%s'", className);
+        return JNI_FALSE;
+    }
+
+    LOGD("%s, success\n", __func__);
+    return JNI_TRUE;
 }
 
-};
+static jint registerNatives(JNIEnv* env)
+{
+    jint ret = JNI_FALSE;
+
+    if (registerNativeMethods(env, classPathNameRx, methodsRx, sizeof(methodsRx) / sizeof(methodsRx[0]))) {
+        ret = JNI_TRUE;
+    }
+
+    LOGD("%s, done\n", __func__);
+    return ret;
+}
+
+
+typedef union {
+    JNIEnv* env;
+    void* venv;
+} UnionJNIEnvToVoid;
+
+jint JNI_OnLoad(JavaVM* vm, void* reserved)
+{
+	UNUSED_ARG(reserved);
+    UnionJNIEnvToVoid uenv;
+    uenv.venv = NULL;
+    jint result = -1;
+    JNIEnv* env = NULL;
+
+    LOGI("JNI_OnLoad");
+
+    if (vm->GetEnv(&uenv.venv, JNI_VERSION_1_4) != JNI_OK) {
+        LOGE("ERROR: GetEnv failed");
+        goto fail;
+    }
+    env = uenv.env;
+
+    if (registerNatives(env) != JNI_TRUE) {
+        LOGE("ERROR: registerNatives failed");
+        goto fail;
+    }
+	
+	CoreApp::getInstance().onInit();
+
+    result = JNI_VERSION_1_4;
+
+fail:
+    return result;
+}
+

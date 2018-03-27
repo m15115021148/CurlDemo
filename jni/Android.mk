@@ -27,11 +27,8 @@ include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libMeigOta
-LOCAL_SRC_FILES :=  onload.cpp \
-					JNIHelp.cpp \
-					CoreApp.cpp					
-
-		
+LOCAL_SRC_FILES :=  CoreApp.cpp
+										
 LOCAL_LDLIBS := -llog 
 
 #设置可以使用C++代码  
@@ -65,6 +62,7 @@ LOCAL_C_INCLUDES := $(LOCAL_PATH)/libs/openssl/include \
 					$(LOCAL_PATH)/libs/curl/include \
 					$(LOCAL_PATH)/framework \
 					$(LOCAL_PATH)/util \
+					$(LOCAL_PATH)/app
 
 
 include $(BUILD_SHARED_LIBRARY)
