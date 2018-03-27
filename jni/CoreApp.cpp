@@ -49,6 +49,11 @@ public :
     virtual void downloadComplete( const string &local_path, int error ) {
         LOGD("downloadComplete local_path=%s",local_path.c_str() );
     };
+	
+	// interface for IDownloadThread
+	virtual void downloadProgress( size_t size ) {
+		
+	};
 
 };
 
