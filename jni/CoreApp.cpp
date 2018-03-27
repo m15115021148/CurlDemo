@@ -6,14 +6,13 @@
 #include "CUtil.cc"
 #include "CRemoteReport.cc"
 #include "CFramework.cc"
+#include "DownloadThread.cc"
 
 #ifdef CUBIC_LOG_TAG
 #undef CUBIC_LOG_TAG
 #endif //CUBIC_LOG_TAG
 #define CUBIC_LOG_TAG "CoreApp" 
 
-#define UNUSED_ARG(arg) (void)arg
-//#define CUBIC_APP_SERVER_URL 				"https://www.meigelink.com/meiglink/api/v1"
 #define CUBIC_APP_SERVER_URL				"http://116.62.205.204:7000/meiglink/api/v1"
 #define CUBIC_APP_SIP_DEFAILT_STUN_ADDR 	"120.24.77.212:3478"
 #define CUBIC_APP_SIP_STUN_ADDR 			"120.24.77.212:3478"
@@ -22,7 +21,7 @@
 
 using namespace std;
 
-class CoreApp : public ICubicApp
+class CoreApp : public ICubicApp, public IDownloadThread
 {
 public :
 	virtual ~CoreApp()
@@ -36,6 +35,8 @@ public :
 	// interface of ICubicApp
     bool onInit() {
 		LOGD("onInit %s",CUBIC_THIS_APP );
+		DownloadThread::getInstance().registerUser( this );
+		DownloadThread::getInstance().start();
         return true;
     };
 
@@ -49,6 +50,11 @@ public :
     virtual int onMessage( const string &str_src_app_name, int n_msg_id, const void* p_data ) {
         LOGE( "n_msg_id:<%d>", n_msg_id );
         return 0;
+    };
+	
+	// interface for IDownloadThread
+    virtual void downloadComplete( const string &local_path, int error ) {
+        LOGD("downloadComplete local_path=%s",local_path.c_str() );
     };
 	
 };
@@ -197,11 +203,11 @@ jstring meig_downApp(JNIEnv *env, jclass type ){
 	jmethodID getpathId = env->GetMethodID(flieClass, "getPath", "()Ljava/lang/String;"); 
 	jstring pathStr = (jstring)env->CallObjectMethod(fileObj,getpathId,"");  
 
-	string path = CUtil::jstringTostring(env, pathStr);
+	string path = CUtil::jstringTostring(env, pathStr);	
 	
-	string req = CRemoteReport::downloadApk(path);
+	DownloadThread::getInstance().addNewDownload( path );
 		
-	return env->NewStringUTF(req.c_str() );
+	return env->NewStringUTF(path.c_str() );
 }
 
 /*
