@@ -13,7 +13,6 @@
 #include "CLock.cc"
 #include "CStringTool.cc"
 #include "CFramework.cc"
-//#include "OtaAppService.cc"
 #include <stdint.h>
 #include <iostream>
 #include <sstream>
@@ -587,18 +586,18 @@ public:
                   "\"lang\":\"en\","
                   "\"bundle_id\":\"info.e3phone.iPhone\","
                   "\"name\":\"%s\","
-			  	"\"serial_num\":\"%s\","
-		  		"\"versionCode\":\"%s\","
-	       	  		"\"versionName\":\"%s\","
-		  		"\"appKey\":\"%s\","
+			  	  "\"serial_num\":\"%s\","
+		  		  "\"versionCode\":\"%s\","
+	       	  	  "\"versionName\":\"%s\","
+		  		  "\"appKey\":\"%s\","
                   "\"appSecret\":\"%s\""
                   "}",
                   userName.c_str(),
                   CubicCfgGetStr( CUBIC_CFG_serial_num ).c_str(), 
-			versionCode.c_str(), 
-			versionName.c_str(), 
-			CUBIC_REQUEST_APP_KEY, 
-			CUBIC_REQUEST_APP_SECRET );
+			      versionCode.c_str(), 
+			      versionName.c_str(), 
+			      CUBIC_REQUEST_APP_KEY, 
+			      CUBIC_REQUEST_APP_SECRET );
         snprintf( addr, PATH_MAX, "%s/app.json", CubicCfgGetStr( CUBIC_CFG_push_server ).c_str() );
         int ret = sendRequest(  addr, req, resp, JSON_SIZE_MAX, false );
         RETNIF_LOGE( ret > 299 || ret < 200, ret, "activate request refused, http result=%d", ret );
