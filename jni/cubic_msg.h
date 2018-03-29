@@ -18,6 +18,10 @@
 #define CUBIC_PATH_MAX 256
 #define CUBIC_FUNC_DESC_MAX 64
 
+typedef struct cubic_down_load_ota {
+    int progress; 
+} cubic_down_load_ota;
+
 typedef enum CubicMessage {
     //received by OTA
     CUBIC_MSG_OTA_UPGRADEFIRMWARE,
@@ -37,20 +41,5 @@ typedef enum CubicMessage {
 #define CUBIC_APP_NAME_SND_SERVICE          "SoundService"
 #define CUBIC_APP_NAME_VM_SERVICE           "VMService"
 #define CUBIC_APP_NAME_PWR_SERVICE          "PowerService"
-
-
-#define CUBIC_WAKELOCK_ID_EVENT             "event"
-#define CUBIC_WAKELOCK_ID_VM_UPLOAD         "upload"
-#define CUBIC_WAKELOCK_ID_VM_DOWNLOAD       "download"
-#define CUBIC_WAKELOCK_ID_VM_UNREAD         "unread"
-#define CUBIC_WAKELOCK_ID_SOUND_PLAY        "sound_play"
-#define CUBIC_WAKELOCK_ID_SOUND_RECORD      "srec"
-#define CUBIC_WAKELOCK_ID_BT                "bt"
-#define CUBIC_WAKELOCK_ID_CHARGE   	        "charge"
-#define CUBIC_WAKELOCK_ID_JOINGROUP	        "join_group"
-#define CUBIC_WAKELOCK_ID_POWER_ACT	        "pwr_act"
-#define CUBIC_WAKELOCK_ID_REPORT_TRACK      "rpt_track"
-#define CUBIC_WAKELOCK_ID_LEAVE_MSG         "lm"
-#define CUBIC_WAKELOCK_ID_SLEEP_FLASH       "sleep_flash"
 
 #endif //_CUBIC_MSG_H_

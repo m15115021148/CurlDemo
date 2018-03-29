@@ -43,13 +43,25 @@
 using namespace rapidjson;
 using namespace std;
 
+class IDownloadCallBack
+{
+public:
+	virtual void downloadProgress( double dltotal, double dlnow ) = 0;
+	virtual void downloadFailuer( string result) = 0; 
+	virtual void downloadCancel() = 0;
+};
 
 class CRemoteReport
 {
 private:
     static const int JSON_SIZE_MAX = 1600;
+	IDownloadCallBack *p_down_load;
+	
+	CRemoteReport()
+		:p_down_load( NULL )
+	{};
 
-    static string getSHA256( const void* data, int size ) {
+    string getSHA256( const void* data, int size ) {
         string ret = "error";
         EVP_MD_CTX* mdctx;
         uint8_t* digest = NULL;
@@ -80,7 +92,7 @@ private:
         return ret;
     };
 
-    static string encodeToBase64( const char* input, int size ) {
+    string encodeToBase64( const char* input, int size ) {
         BIO* bio, *b64;
         BUF_MEM* bufferPtr;
         b64 = BIO_new( BIO_f_base64() );
@@ -97,8 +109,7 @@ private:
         return CStringTool::trim( ret );
     };
 
-
-    static size_t calcDecodeLength( const char* b64input ) { //Calculates the length of a decoded string
+    size_t calcDecodeLength( const char* b64input ) { //Calculates the length of a decoded string
         size_t len = strlen( b64input ),
                padding = 0;
 
@@ -110,7 +121,7 @@ private:
         return ( len * 3 ) / 4 - padding;
     }
 
-    static string decodeFromBase64( char* input, int size ) {
+    string decodeFromBase64( char* input, int size ) {
         BIO* bio, *b64;
         char* buffer = NULL;
         int decodeLen = calcDecodeLength( input );
@@ -129,7 +140,7 @@ private:
         return ret;
     };
 
-    static string getWsseHeader() {
+    string getWsseHeader() {
         string uname = CubicCfgGetStr( CUBIC_CFG_push_uname );
         string upass = CubicCfgGetStr( CUBIC_CFG_push_upswd );
         string nonce = CUtil::generateUUID();
@@ -153,7 +164,7 @@ private:
         return wsse;
     };
 
-	static string getCustomHeader(){
+	string getCustomHeader(){
 		string uname = CubicCfgGetStr( CUBIC_CFG_push_uname );
 		string x_uuid = "client_uuid: ";
 		x_uuid += uname;
@@ -161,7 +172,7 @@ private:
 		return x_uuid;
 	}
 
-	static string getCustomHeader1(){
+	string getCustomHeader1(){
 		string psw = CubicCfgGetStr( CUBIC_CFG_push_upswd );
 		string x_api_psw = "api_password: ";
 		x_api_psw += psw;
@@ -169,12 +180,7 @@ private:
 		return x_api_psw;
     }
 
-    static int CurlDebugCallback(
-        CURL* handle,
-        curl_infotype type,
-        char* data,
-        size_t size,
-        void* userptr ) {
+    static int CurlDebugCallback( CURL* handle, curl_infotype type, char* data, size_t size, void* userptr ) {
         const int BUF_SIZE = 1024;
         char buf[BUF_SIZE + 4];
         strncpy( buf, data, MIN( BUF_SIZE, size ) );
@@ -242,7 +248,7 @@ private:
         return realsize;
     };
 
-    static int sendRequest( const string &addr, const char* req = NULL, char* resp = NULL, int resp_sz = 0, bool withWsse = true ) {
+    int sendRequest( const string &addr, const char* req = NULL, char* resp = NULL, int resp_sz = 0, bool withWsse = true ) {
         CURL* curl = curl_easy_init();
         RETNIF( curl == NULL, -1 );
         struct curl_slist* head_list = NULL;
@@ -315,7 +321,7 @@ private:
     static size_t WriteToFileCallback( void* contents, size_t size, size_t nmemb, void* userp ) {
         struct FileStruct* file = ( struct FileStruct* )userp;
         size_t realsize = size * nmemb;
-        LOGD( "WriteToFileCallback size=%u", size );
+        //LOGD( "WriteToFileCallback size=%u", size );
         RETNIF_LOGE( realsize + file->size > file->max, -1,
                      "WriteToFileCallback failed for over size, last size:%d", file->size );
         RETNIF_LOGE( 0 >= fwrite( contents, size, nmemb, file->file ), -1,
@@ -324,7 +330,7 @@ private:
         return realsize;
     };
 
-    static int sendRequestFile( const string &addr, FILE* file, size_t limit, const char* req = NULL, bool withWsse = true ) {
+    int sendRequestFile( const string &addr, FILE* file, size_t limit, const char* req = NULL, bool withWsse = true ) {
         RETNIF( file == NULL || limit == 0, -1 );
         CURL* curl = curl_easy_init();
         RETNIF( curl == NULL, -1 );
@@ -383,8 +389,70 @@ private:
         return ret;
     };
 
+	static int ProgressCallback(void *progress_data, double dltotal, double dlnow, double ultotal,  double ulnow) {  
+		//LOGD("ProgressCallback ->(%g %%)\n", dlnow*100.0/dltotal);  
+		if ( progress_data ) {
+			IDownloadCallBack* p = (IDownloadCallBack*)progress_data;
+			p->downloadProgress( dltotal, dlnow );
+		}		
+		return 0;  
+	} 
+	
+	int downloadFile(const string &addr,FILE* file) {
+        CURL* curl = curl_easy_init();
+        RETNIF( curl == NULL, -1 );
+        struct curl_slist* head_list = NULL;
+        FileStruct resp_file = {file, 0 , 0xFFFFFF};
+		LOGD( "downloadFile down_url=%s", addr.c_str());
+		
+        head_list = curl_slist_append( head_list, "Content-Type: application/json; charset=UTF-8" );
+		
+        curl_easy_setopt( curl, CURLOPT_URL, addr.c_str() );
+        curl_easy_setopt( curl, CURLOPT_HTTPHEADER, head_list );
+        curl_easy_setopt( curl, CURLOPT_HTTPGET, TRUE );
+		curl_easy_setopt( curl, CURLOPT_WRITEFUNCTION, WriteToFileCallback );
+        curl_easy_setopt( curl, CURLOPT_WRITEDATA, ( void* )&resp_file );
+        curl_easy_setopt( curl, CURLOPT_VERBOSE, 1L );
+		curl_easy_setopt( curl, CURLOPT_NOPROGRESS, 0 );  
+		curl_easy_setopt( curl, CURLOPT_PROGRESSFUNCTION, ProgressCallback );  
+        curl_easy_setopt( curl, CURLOPT_PROGRESSDATA, p_down_load );  
+        curl_easy_setopt( curl, CURLOPT_AUTOREFERER, 1 );
+        curl_easy_setopt( curl, CURLOPT_FOLLOWLOCATION, 1 );
+        curl_easy_setopt( curl, CURLOPT_MAXREDIRS, 1 );
+        curl_easy_setopt( curl, CURLOPT_CONNECTTIMEOUT, 30 );
+        curl_easy_setopt( curl, CURLOPT_SSL_VERIFYPEER, FALSE );
+        curl_easy_setopt( curl, CURLOPT_SSL_VERIFYHOST, FALSE );
+        curl_easy_setopt( curl, CURLOPT_NOSIGNAL, 1L);
+        LOGD( "downloadFile before curl_easy_perform" );
+        int ret = curl_easy_perform( curl );
+        LOGD( "downloadFile curl_easy_perform ret=%d", ret );
+
+        if( ret != CURLE_OK ) {
+            LOGE( "downloadFile error when curl_easy_perform, ret=%d", ret );
+            curl_easy_cleanup( curl );
+            return -1;
+        }
+
+        curl_easy_getinfo( curl, CURLINFO_RESPONSE_CODE, &ret );
+        curl_easy_cleanup( curl );
+        LOGD( "downloadFile ret=%d", ret );
+        return ret;
+    };
+	
 public:
-    static int activate(const string &userName, const string &versionCode, const string &versionName) {
+	virtual ~CRemoteReport()
+    {};
+	
+	void registerUser( IDownloadCallBack* user ) {
+        p_down_load = user;
+    };
+
+    static CRemoteReport &getInstance() {
+        static CRemoteReport instance;
+        return instance;
+    };
+
+    int activate(const string &userName, const string &versionCode, const string &versionName) {
         char req[JSON_SIZE_MAX + 4] = {0};
         char resp[JSON_SIZE_MAX + 4] = {0};
         char addr[PATH_MAX + 4] = {0};
@@ -417,12 +485,10 @@ public:
         RETNIF_LOGE( !resp_dom.HasMember( "api_password" ) || !resp_dom["api_password"].IsString(), -3, "activate fail, not valid api_password !" );
         CubicCfgSet( CUBIC_CFG_push_uname, resp_dom["client_uuid"].GetString() );
         CubicCfgSet( CUBIC_CFG_push_upswd, resp_dom["api_password"].GetString() );
-
-      
         return 0;
     };   
 
-	static string updateApp(const string &versionCode){
+	string updateApp(const string &versionCode){
 		char req[JSON_SIZE_MAX + 4] = {0};
 		char resp[JSON_SIZE_MAX + 4] = {0};
         char addr[PATH_MAX + 4] = {0};
@@ -464,7 +530,7 @@ public:
 		return json;
 	};
 
-	static string downloadApk(const string &path ){
+	string downloadApk(const string &path ){
 		LOGD("downloadApk ...");
 		string req ;
 		string fname = path;
@@ -493,7 +559,7 @@ public:
 		fname += CUtil::getFileNameOfPath( url );
 		FILE* file = fopen( fname.c_str(), "w+" );
 		RETNIF_LOGE( file == NULL, "null", "downloadApk failed, file can not open" );
-		int ret = sendRequestFile( url, file, 0xFFFFFF );
+		int ret = downloadFile( url, file );
 		fclose( file );
 		if( ret < 0){
 			unlink( fname.c_str() );

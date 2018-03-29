@@ -19,7 +19,6 @@ class IDownloadThread
 {
 public:
     virtual void downloadComplete( const string &local_path, int error ) = 0;
-	virtual void downloadProgress( size_t size ) = 0;
 };
 
 class DownloadThread : public CThread
@@ -71,7 +70,14 @@ public:
 
         LOGD( "download ota apk: %s", url.c_str() );
 		
-		local_path = CRemoteReport::downloadApk( url );
+		local_path = CRemoteReport::getInstance().downloadApk( url );
+		
+		/*
+		if( m_download_user != NULL ) {
+			cubic_down_load_ota* data = ( cubic_down_load_ota* )p_data;
+			m_download_user->downloadProgress( data->progress );
+		}*/
+		
 				
         //m_downloading--;
 		

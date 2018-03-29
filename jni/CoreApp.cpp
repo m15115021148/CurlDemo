@@ -15,7 +15,7 @@
 
 #define CUBIC_APP_SERVER_URL				"http://116.62.205.204:7000/meiglink/api/v1"
 
-class CoreApp : public IDownloadThread
+class CoreApp : public IDownloadThread , public IDownloadCallBack
 {
 public :
 	virtual ~CoreApp()
@@ -37,24 +37,33 @@ public :
     };
 	
 	void onStartDownloadApk(const string &rootPath){
+		CRemoteReport::getInstance().registerUser( this );
 		DownloadThread::getInstance().registerUser( this );
 		DownloadThread::getInstance().start();		
 		DownloadThread::getInstance().addNewDownload(rootPath);
 	};
 	
 	
-	
-	
 	// interface for IDownloadThread
     virtual void downloadComplete( const string &local_path, int error ) {
         LOGD("downloadComplete local_path=%s",local_path.c_str() );
     };
+
+	// interface for IDownloadCallBack
+	virtual void downloadProgress( double dltotal, double dlnow ) {
+		LOGD("downloadProgress ->(%g %%)\n", dlnow*100.0/dltotal);  
+	};
 	
-	// interface for IDownloadThread
-	virtual void downloadProgress( size_t size ) {
+	// interface for IDownloadCallBack
+	virtual void downloadFailuer( string result) {
 		
 	};
-
+	
+	// interface for IDownloadCallBack
+	virtual void downloadCancel() {
+		
+	};
+ 
 };
 
 /*
@@ -105,7 +114,7 @@ jint meig_registerUser(JNIEnv *env, jclass type, jstring userName, jstring mac, 
 	string code = CUtil::jstringTostring(env, versionCode);
 	string name = CUtil::jstringTostring(env, versionName);
 	CubicCfgSet(CUBIC_CFG_serial_num ,j_mac );
-	int ret = CRemoteReport::activate(u_name, code, name );
+	int ret = CRemoteReport::getInstance().activate(u_name, code, name );
 	return ret;
 };
 
@@ -116,7 +125,7 @@ jint meig_registerUser(JNIEnv *env, jclass type, jstring userName, jstring mac, 
  */
 jint meig_updateApp(JNIEnv *env, jclass type, jstring versionCode) {
 	string code = CUtil::jstringTostring(env, versionCode);
-	string req = CRemoteReport::updateApp(code);
+	string req = CRemoteReport::getInstance().updateApp(code);
 
 	Document doc;
 	RETNIF_LOGE( doc.Parse<0>( req.c_str() ).HasParseError(), -1, "updateApp error when parse request: %s", req.c_str() );
@@ -151,7 +160,11 @@ jstring meig_downApp(JNIEnv *env, jclass type ){
 	return env->NewStringUTF(path.c_str() );
 }
 
-
+void sendJavaMsg(JNIEnv* env, jobject instance, jmethodID func, const string msg) {
+    jstring javaMsg = env->NewStringUTF(msg.c_str());
+    env->CallVoidMethod(instance, func, javaMsg);
+    env->DeleteLocalRef(javaMsg);
+}
 
 //------------------------------------jni loaded----------------------------------------------------------
 JNIEXPORT const char *classPathNameRx = "com/meigsmart/meigota/MeigOtaService";
