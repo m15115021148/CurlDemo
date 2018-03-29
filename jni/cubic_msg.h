@@ -19,7 +19,7 @@
 #define CUBIC_FUNC_DESC_MAX 64
 
 typedef struct cubic_down_load_ota {
-    int progress; 
+    JNIEnv*  env;
 } cubic_down_load_ota;
 
 typedef enum CubicMessage {

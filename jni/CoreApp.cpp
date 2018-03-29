@@ -2,6 +2,7 @@
 #include "cubic_inc.h"
 #include <stdio.h>
 #include <string.h>
+#include <pthread.h>
 #include <rapidjson/document.h>
 #include "CUtil.cc"
 #include "CRemoteReport.cc"
@@ -17,6 +18,15 @@
 
 class CoreApp : public IDownloadThread , public IDownloadCallBack
 {
+private :
+	double 				now_size;
+	double				now_total;
+	
+	CoreApp()
+        : now_size( 0 )
+		, now_total( 0 )
+    {};
+	
 public :
 	virtual ~CoreApp()
     {};
@@ -42,16 +52,34 @@ public :
 		DownloadThread::getInstance().start();		
 		DownloadThread::getInstance().addNewDownload(rootPath);
 	};
-	
-	
+		
 	// interface for IDownloadThread
     virtual void downloadComplete( const string &local_path, int error ) {
-        LOGD("downloadComplete local_path=%s",local_path.c_str() );
+        LOGD("downloadComplete local_path=%s",local_path.c_str() );	
     };
 
 	// interface for IDownloadCallBack
 	virtual void downloadProgress( double dltotal, double dlnow ) {
 		LOGD("downloadProgress ->(%g %%)\n", dlnow*100.0/dltotal);  
+		now_size = dlnow;
+		now_total = dltotal;
+		
+		/*
+		pthread_t       threadInfo_;
+		pthread_attr_t  threadAttr_;
+
+		pthread_attr_init(&threadAttr_);
+		pthread_attr_setdetachstate(&threadAttr_, PTHREAD_CREATE_DETACHED);
+
+		//pthread_mutex_init(&m_ota.lock, NULL);
+
+		int result  = pthread_create( &threadInfo_, &threadAttr_, downApp, NULL );
+		assert(result == 0);
+
+		pthread_attr_destroy(&threadAttr_);
+
+		(void)result;*/
+		
 	};
 	
 	// interface for IDownloadCallBack
@@ -62,6 +90,14 @@ public :
 	// interface for IDownloadCallBack
 	virtual void downloadCancel() {
 		
+	};
+	
+	double &getNowSize(){
+		return now_size;
+	}; 
+	
+	double &getNowTotal(){
+		return now_total;
 	};
  
 };
@@ -131,6 +167,12 @@ jint meig_updateApp(JNIEnv *env, jclass type, jstring versionCode) {
 	RETNIF_LOGE( doc.Parse<0>( req.c_str() ).HasParseError(), -1, "updateApp error when parse request: %s", req.c_str() );
 	RETNIF_LOGE( !doc.HasMember( "result" ) || !doc["result"].IsNumber(), -1, "updateApp fail, not valid result !" );
 	
+	jclass cls = env->FindClass("com/meigsmart/meigota/MeigOtaService");
+	jobject obj = env->AllocObject(cls);
+	
+	jmethodID down_success = env->GetMethodID(cls, "downSuccess","(Ljava/lang/String;)V");
+	env->CallVoidMethod(obj,down_success, env->NewStringUTF( req.c_str() ) );
+	
 	if(doc["result"].GetInt() == 200){
 		LOGD("There is the latest app update");
 		return 1;
@@ -139,6 +181,7 @@ jint meig_updateApp(JNIEnv *env, jclass type, jstring versionCode) {
 	return 0;
 };
 
+int monitor;
 /*
  * Class:     downApp
  * Method:    downApp
@@ -156,7 +199,20 @@ jstring meig_downApp(JNIEnv *env, jclass type ){
 	string path = CUtil::jstringTostring(env, pathStr);
 	
 	CoreApp::getInstance().onStartDownloadApk(path);
-			
+	monitor = 1;
+	
+	/*
+	while (monitor)  
+    {  
+		jclass cls = env->FindClass("com/meigsmart/meigota/MeigOtaService");
+		jobject obj = env->AllocObject(cls);
+		
+		jmethodID down_success = env->GetMethodID(cls, "downProgress","(DD)V");
+        env->CallVoidMethod(obj,down_success, CoreApp::getInstance().getNowSize(), CoreApp::getInstance().getNowTotal() );
+		
+		sleep(1);
+    }  */
+				
 	return env->NewStringUTF(path.c_str() );
 }
 
@@ -210,38 +266,29 @@ static jint registerNatives(JNIEnv* env)
     return ret;
 }
 
-
 typedef union {
     JNIEnv* env;
     void* venv;
 } UnionJNIEnvToVoid;
 
-jint JNI_OnLoad(JavaVM* vm, void* reserved)
+JNIEXPORT jint JNI_OnLoad(JavaVM* vm, void* reserved)
 {
-	UNUSED_ARG(reserved);
-    UnionJNIEnvToVoid uenv;
-    uenv.venv = NULL;
-    jint result = -1;
-    JNIEnv* env = NULL;
-
-    LOGI("JNI_OnLoad");
-
-    if (vm->GetEnv(&uenv.venv, JNI_VERSION_1_4) != JNI_OK) {
-        LOGE("ERROR: GetEnv failed");
-        goto fail;
-    }
-    env = uenv.env;
-
-    if (registerNatives(env) != JNI_TRUE) {
-        LOGE("ERROR: registerNatives failed");
-        goto fail;
+	JNIEnv* env;
+	LOGI("JNI_OnLoad");
+	
+    if (vm->GetEnv((void**)&env, JNI_VERSION_1_6) != JNI_OK) {
+		LOGE("ERROR: GetEnv failed");
+        return JNI_ERR; 
     }
 	
+	if (registerNatives(env) != JNI_TRUE) {
+        LOGE("ERROR: registerNatives failed");
+        return JNI_ERR;
+    }
+		
 	CoreApp::getInstance().onInit();
-
-    result = JNI_VERSION_1_4;
-
-fail:
-    return result;
+	
+    return  JNI_VERSION_1_6;
+	
 }
 
