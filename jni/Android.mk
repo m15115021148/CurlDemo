@@ -27,7 +27,9 @@ include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libMeigOta
-LOCAL_SRC_FILES :=  CoreApp.cpp
+LOCAL_SRC_FILES :=  JNIUtil.cpp \
+					CoreApp.cpp
+					
 										
 LOCAL_LDLIBS := -llog 
 

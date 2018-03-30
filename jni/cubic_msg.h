@@ -18,10 +18,6 @@
 #define CUBIC_PATH_MAX 256
 #define CUBIC_FUNC_DESC_MAX 64
 
-typedef struct cubic_down_load_ota {
-    JNIEnv*  env;
-} cubic_down_load_ota;
-
 typedef enum CubicMessage {
     //received by OTA
     CUBIC_MSG_OTA_UPGRADEFIRMWARE,

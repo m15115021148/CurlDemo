@@ -8,6 +8,7 @@
 #include "CRemoteReport.cc"
 #include "CFramework.cc"
 #include "DownloadThread.cc"
+#include "JNIUtil.h"
 
 #ifdef CUBIC_LOG_TAG
 #undef CUBIC_LOG_TAG
@@ -16,7 +17,9 @@
 
 #define CUBIC_APP_SERVER_URL				"http://116.62.205.204:7000/meiglink/api/v1"
 
-class CoreApp : public IDownloadThread , public IDownloadCallBack
+JNIUtil util;
+
+class CoreApp : public IDownloadThread , public IDownloadCallBack, public CThread
 {
 private :
 	double 				now_size;
@@ -56,6 +59,15 @@ public :
 	// interface for IDownloadThread
     virtual void downloadComplete( const string &local_path, int error ) {
         LOGD("downloadComplete local_path=%s",local_path.c_str() );	
+		JNIEnv* env = util.GetJNIEnv(); 
+		
+		jclass cls = env->FindClass("com/meigsmart/meigota/MeigOtaService");
+		jobject obj = env->AllocObject(cls);
+		
+		jmethodID down_success = env->GetMethodID(cls, "downSuccess","(Ljava/lang/String;)V");
+		env->CallVoidMethod(obj,down_success, env->NewStringUTF( local_path.c_str() ) );
+		
+		getInstance().stop();
     };
 
 	// interface for IDownloadCallBack
@@ -63,23 +75,7 @@ public :
 		LOGD("downloadProgress ->(%g %%)\n", dlnow*100.0/dltotal);  
 		now_size = dlnow;
 		now_total = dltotal;
-		
-		/*
-		pthread_t       threadInfo_;
-		pthread_attr_t  threadAttr_;
-
-		pthread_attr_init(&threadAttr_);
-		pthread_attr_setdetachstate(&threadAttr_, PTHREAD_CREATE_DETACHED);
-
-		//pthread_mutex_init(&m_ota.lock, NULL);
-
-		int result  = pthread_create( &threadInfo_, &threadAttr_, downApp, NULL );
-		assert(result == 0);
-
-		pthread_attr_destroy(&threadAttr_);
-
-		(void)result;*/
-		
+			
 	};
 	
 	// interface for IDownloadCallBack
@@ -90,6 +86,24 @@ public :
 	// interface for IDownloadCallBack
 	virtual void downloadCancel() {
 		
+	};
+	
+	virtual RunRet run( void* user ) {
+		UNUSED_ARG( user );
+		/*LOGD("download apk ....start run");
+		
+		cubic_down_load_ota *ota = (cubic_down_load_ota*) user;
+		JNIEnv *env = ota->env;
+		JNIEnv* env = util.GetJNIEnv(); 
+		
+		jclass cls = env->FindClass("com/meigsmart/meigota/MeigOtaService");
+		jobject obj = env->AllocObject(cls);
+			
+		jmethodID down_success = env->GetMethodID(cls, "downProgress","(DD)V");
+		
+		env->CallVoidMethod(obj,down_success, now_size, now_total); */
+		
+		return RUN_CONTINUE;
 	};
 	
 	double &getNowSize(){
@@ -160,18 +174,12 @@ jint meig_registerUser(JNIEnv *env, jclass type, jstring userName, jstring mac, 
  * Signature: (II)I 
  */
 jint meig_updateApp(JNIEnv *env, jclass type, jstring versionCode) {
-	string code = CUtil::jstringTostring(env, versionCode);
+	string code = util.Jstring2String( versionCode );
 	string req = CRemoteReport::getInstance().updateApp(code);
 
 	Document doc;
 	RETNIF_LOGE( doc.Parse<0>( req.c_str() ).HasParseError(), -1, "updateApp error when parse request: %s", req.c_str() );
 	RETNIF_LOGE( !doc.HasMember( "result" ) || !doc["result"].IsNumber(), -1, "updateApp fail, not valid result !" );
-	
-	jclass cls = env->FindClass("com/meigsmart/meigota/MeigOtaService");
-	jobject obj = env->AllocObject(cls);
-	
-	jmethodID down_success = env->GetMethodID(cls, "downSuccess","(Ljava/lang/String;)V");
-	env->CallVoidMethod(obj,down_success, env->NewStringUTF( req.c_str() ) );
 	
 	if(doc["result"].GetInt() == 200){
 		LOGD("There is the latest app update");
@@ -181,7 +189,6 @@ jint meig_updateApp(JNIEnv *env, jclass type, jstring versionCode) {
 	return 0;
 };
 
-int monitor;
 /*
  * Class:     downApp
  * Method:    downApp
@@ -198,21 +205,9 @@ jstring meig_downApp(JNIEnv *env, jclass type ){
 
 	string path = CUtil::jstringTostring(env, pathStr);
 	
-	CoreApp::getInstance().onStartDownloadApk(path);
-	monitor = 1;
+	CoreApp::getInstance().onStartDownloadApk(path);	
+	CoreApp::getInstance().start();
 	
-	/*
-	while (monitor)  
-    {  
-		jclass cls = env->FindClass("com/meigsmart/meigota/MeigOtaService");
-		jobject obj = env->AllocObject(cls);
-		
-		jmethodID down_success = env->GetMethodID(cls, "downProgress","(DD)V");
-        env->CallVoidMethod(obj,down_success, CoreApp::getInstance().getNowSize(), CoreApp::getInstance().getNowTotal() );
-		
-		sleep(1);
-    }  */
-				
 	return env->NewStringUTF(path.c_str() );
 }
 
@@ -232,8 +227,7 @@ static JNINativeMethod methodsRx[] = {
 	{"downApp","()Ljava/lang/String;",(void*)meig_downApp },
 };
 
-static jint registerNativeMethods(JNIEnv* env, const char* className,JNINativeMethod* gMethods, int numMethods)
-{
+static jint registerNativeMethods(JNIEnv* env, const char* className,JNINativeMethod* gMethods, int numMethods){
     jclass clazz;
 
     clazz = env->FindClass(className);
@@ -254,8 +248,7 @@ static jint registerNativeMethods(JNIEnv* env, const char* className,JNINativeMe
     return JNI_TRUE;
 }
 
-static jint registerNatives(JNIEnv* env)
-{
+static jint registerNatives(JNIEnv* env){
     jint ret = JNI_FALSE;
 
     if (registerNativeMethods(env, classPathNameRx, methodsRx, sizeof(methodsRx) / sizeof(methodsRx[0]))) {
@@ -266,13 +259,7 @@ static jint registerNatives(JNIEnv* env)
     return ret;
 }
 
-typedef union {
-    JNIEnv* env;
-    void* venv;
-} UnionJNIEnvToVoid;
-
-JNIEXPORT jint JNI_OnLoad(JavaVM* vm, void* reserved)
-{
+JNIEXPORT jint JNI_OnLoad(JavaVM* vm, void* reserved){
 	JNIEnv* env;
 	LOGI("JNI_OnLoad");
 	
@@ -285,6 +272,8 @@ JNIEXPORT jint JNI_OnLoad(JavaVM* vm, void* reserved)
         LOGE("ERROR: registerNatives failed");
         return JNI_ERR;
     }
+		
+	JNIUtil::Init(env); 
 		
 	CoreApp::getInstance().onInit();
 	
