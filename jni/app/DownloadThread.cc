@@ -71,13 +71,6 @@ public:
         LOGD( "download ota apk: %s", url.c_str() );
 		
 		local_path = CRemoteReport::getInstance().downloadApk( url );
-		
-		/*
-		if( m_download_user != NULL ) {
-			cubic_down_load_ota* data = ( cubic_down_load_ota* )p_data;
-			m_download_user->downloadProgress( data->progress );
-		}*/
-		
 				
         //m_downloading--;
 		
