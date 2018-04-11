@@ -4,7 +4,6 @@
 #include <string.h>
 #include <pthread.h>
 #include <rapidjson/document.h>
-#include "CUtil.cc"
 #include "CRemoteReport.cc"
 #include "CFramework.cc"
 #include "DownloadThread.cc"
@@ -59,13 +58,14 @@ public :
 	// interface for IDownloadThread
     virtual void downloadComplete( const string &local_path, int error ) {
         LOGD("downloadComplete local_path=%s",local_path.c_str() );	
+		/*
 		JNIEnv* env = util.GetJNIEnv(); 
 		
 		jclass cls = env->FindClass("com/meigsmart/meigota/MeigOtaService");
 		jobject obj = env->AllocObject(cls);
 		
 		jmethodID down_success = env->GetMethodID(cls, "downSuccess","(Ljava/lang/String;)V");
-		env->CallVoidMethod(obj,down_success, env->NewStringUTF( local_path.c_str() ) );
+		env->CallVoidMethod(obj,down_success, env->NewStringUTF( local_path.c_str() ) );*/
 		
 		getInstance().stop();
     };
@@ -91,9 +91,7 @@ public :
 	virtual RunRet run( void* user ) {
 		UNUSED_ARG( user );
 		/*LOGD("download apk ....start run");
-		
-		cubic_down_load_ota *ota = (cubic_down_load_ota*) user;
-		JNIEnv *env = ota->env;
+				
 		JNIEnv* env = util.GetJNIEnv(); 
 		
 		jclass cls = env->FindClass("com/meigsmart/meigota/MeigOtaService");
@@ -101,7 +99,7 @@ public :
 			
 		jmethodID down_success = env->GetMethodID(cls, "downProgress","(DD)V");
 		
-		env->CallVoidMethod(obj,down_success, now_size, now_total); */
+		env->CallVoidMethod(obj,down_success, now_size, now_total);*/
 		
 		return RUN_CONTINUE;
 	};
@@ -146,7 +144,7 @@ jint meig_initAppInfo(JNIEnv *env, jclass type , jobject obj ) {
     jstring str = static_cast<jstring>(env->CallObjectMethod(signature_obj, string_id));
     char *c_msg = (char*)env->GetStringUTFChars(str,0);
     
-    string packName  = CUtil::jstringTostring(env,pkg_str);
+    string packName  = util.Jstring2String(pkg_str);
 	CubicCfgSetRootPath(packName);
     CubicCfgSet(CUBIC_CFG_push_server,CUBIC_APP_SERVER_URL);
 	
@@ -159,10 +157,10 @@ jint meig_initAppInfo(JNIEnv *env, jclass type , jobject obj ) {
  * Signature: (II)I 
  */
 jint meig_registerUser(JNIEnv *env, jclass type, jstring userName, jstring mac, jstring versionCode, jstring versionName ) {
-	string u_name = CUtil::jstringTostring(env, userName);
-	string j_mac = CUtil::jstringTostring(env, mac);
-	string code = CUtil::jstringTostring(env, versionCode);
-	string name = CUtil::jstringTostring(env, versionName);
+	string u_name = util.Jstring2String( userName );
+	string j_mac = util.Jstring2String( mac );
+	string code = util.Jstring2String(versionCode);
+	string name = util.Jstring2String(versionName);
 	CubicCfgSet(CUBIC_CFG_serial_num ,j_mac );
 	int ret = CRemoteReport::getInstance().activate(u_name, code, name );
 	return ret;
@@ -203,7 +201,7 @@ jstring meig_downApp(JNIEnv *env, jclass type ){
 	jmethodID getpathId = env->GetMethodID(flieClass, "getPath", "()Ljava/lang/String;"); 
 	jstring pathStr = (jstring)env->CallObjectMethod(fileObj,getpathId,"");  
 
-	string path = CUtil::jstringTostring(env, pathStr);
+	string path = util.Jstring2String( pathStr);
 	
 	CoreApp::getInstance().onStartDownloadApk(path);	
 	CoreApp::getInstance().start();
