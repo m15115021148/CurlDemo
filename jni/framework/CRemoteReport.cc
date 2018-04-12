@@ -443,7 +443,7 @@ public:
 	virtual ~CRemoteReport()
     {};
 	
-	void registerUser( IDownloadCallBack* user ) {
+	void registerDownloadCallBack( IDownloadCallBack* user ) {
         p_down_load = user;
     };
 

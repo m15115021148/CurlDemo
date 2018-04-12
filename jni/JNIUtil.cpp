@@ -29,10 +29,19 @@ JNIUtil::JNIUtil() :m_bAttach(false)
 {
 
 }
+
 JNIUtil::~JNIUtil()
 {
 	Detach();
 }
+
+JavaVM* JNIUtil::GetVM()
+{
+	if (m_sJVM == NULL)
+		return NULL;
+	return m_sJVM;
+}
+
 JNIEnv* JNIUtil::GetJNIEnv()
 {
 	if (m_sJVM == NULL)
@@ -51,6 +60,7 @@ JNIEnv* JNIUtil::GetJNIEnv()
 	}
 	return env;
 }
+
 void JNIUtil::Detach()
 {
 	if (m_bAttach)

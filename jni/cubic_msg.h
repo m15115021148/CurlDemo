@@ -18,6 +18,13 @@
 #define CUBIC_PATH_MAX 256
 #define CUBIC_FUNC_DESC_MAX 64
 
+typedef struct cubic_down_load{
+	JavaVM  *vm;
+	JNIEnv* env;
+	jclass  jcls;
+	jobject jobj;
+}cubic_down_load;
+
 typedef enum CubicMessage {
     //received by OTA
     CUBIC_MSG_OTA_UPGRADEFIRMWARE,

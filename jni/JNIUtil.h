@@ -15,6 +15,7 @@ public:
 public:  
     JNIUtil();  
     ~JNIUtil();  
+	JavaVM* GetVM();
     JNIEnv* GetJNIEnv();  
     string Jstring2String(jstring jstr);  
     jstring String2Jstring(const char* str);  
@@ -23,7 +24,7 @@ private:
     static jmethodID m_ctorID;  
     static jmethodID m_getByteID;  
     void Detach();  
-    static JavaVM* m_sJVM;  
+	static JavaVM* m_sJVM;
 public:  
     bool m_bAttach;  
 };  

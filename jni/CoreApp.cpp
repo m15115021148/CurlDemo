@@ -49,7 +49,7 @@ public :
     };
 	
 	void onStartDownloadApk(const string &rootPath){
-		CRemoteReport::getInstance().registerUser( this );
+		CRemoteReport::getInstance().registerDownloadCallBack( this );
 		DownloadThread::getInstance().registerUser( this );
 		DownloadThread::getInstance().start();		
 		DownloadThread::getInstance().addNewDownload(rootPath);
@@ -58,16 +58,22 @@ public :
 	// interface for IDownloadThread
     virtual void downloadComplete( const string &local_path, int error ) {
         LOGD("downloadComplete local_path=%s",local_path.c_str() );	
-		/*
+		JavaVM* vm = util.GetVM();
 		JNIEnv* env = util.GetJNIEnv(); 
+		
+		/*
+		vm->AttachCurrentThread(&(env), NULL);
+		
 		
 		jclass cls = env->FindClass("com/meigsmart/meigota/MeigOtaService");
 		jobject obj = env->AllocObject(cls);
 		
 		jmethodID down_success = env->GetMethodID(cls, "downSuccess","(Ljava/lang/String;)V");
-		env->CallVoidMethod(obj,down_success, env->NewStringUTF( local_path.c_str() ) );*/
+		env->CallVoidMethod(obj,down_success, env->NewStringUTF( local_path.c_str() ) );
 		
-		getInstance().stop();
+		vm->DetachCurrentThread();*/
+		
+		stop();
     };
 
 	// interface for IDownloadCallBack
@@ -101,8 +107,72 @@ public :
 		
 		env->CallVoidMethod(obj,down_success, now_size, now_total);*/
 		
+		if(user == NULL) return RUN_END;
+  
+		//JavaVM* vm = util.GetVM();
+		//JNIEnv* env = util.GetJNIEnv(); 
+		
+		cubic_down_load* p_down = (cubic_down_load*)user;
+		
+		
+		JavaVM* vm = p_down->vm;
+		JNIEnv* env = p_down->env; 
+		
+		int getEnvStat = vm->GetEnv((void**)&env, JNI_VERSION_1_6);
+		if (getEnvStat == JNI_EDETACHED) {
+			if (vm->AttachCurrentThread( &env, NULL) != 0) {
+				return RUN_END;
+			}
+		}
+
+		
+		//强转回来
+		jobject jcallback = p_down->jobj;
+		
+		//通过强转后的jcallback 获取到要回调的类
+		jclass javaClass = env->GetObjectClass(jcallback);
+
+		if (javaClass == 0) {
+			LOGE("Unable to find class");
+			vm->DetachCurrentThread();
+			return RUN_END;
+		}
+
+	   //获取要回调的方法ID
+		jmethodID javaCallbackId = env->GetMethodID(javaClass, "onProgress","(DD)V");
+		
+		if (javaCallbackId == NULL) {
+			LOGE("Unable to find method:onProgress");
+			return RUN_END;
+		}
+		//执行回调
+		env->CallVoidMethod(jcallback, javaCallbackId, getNowSize(), getNowTotal());	
+		
 		return RUN_CONTINUE;
 	};
+	
+	virtual void onStop( void* user ) {
+        UNUSED_ARG( user );
+		LOGD("onStop.");
+		
+		/*
+		if(user == NULL) return;
+		
+		JavaVM* vm = util.GetVM();
+		JNIEnv* env = util.GetJNIEnv(); 
+		
+		//强转回来
+		jobject jcallback = (jobject)user;
+		
+		//释放当前线程
+		vm->DetachCurrentThread();
+		env = NULL;
+		
+		//释放你的全局引用的接口，生命周期自己把控
+		env->DeleteGlobalRef(jcallback);
+		jcallback = NULL;*/
+		
+    };
 	
 	double &getNowSize(){
 		return now_size;
@@ -187,12 +257,13 @@ jint meig_updateApp(JNIEnv *env, jclass type, jstring versionCode) {
 	return 0;
 };
 
+JavaVM *g_VM;
 /*
  * Class:     downApp
  * Method:    downApp
  * Signature: ()V
  */
-jstring meig_downApp(JNIEnv *env, jclass type ){
+jstring meig_downApp(JNIEnv *env, jclass type, jobject jcallback ){
 	jclass envcls = env->FindClass("android/os/Environment");
 	if (envcls == NULL) return env->NewStringUTF("");
 	jmethodID id = env->GetStaticMethodID(envcls, "getExternalStorageDirectory", "()Ljava/io/File;"); 
@@ -204,9 +275,67 @@ jstring meig_downApp(JNIEnv *env, jclass type ){
 	string path = util.Jstring2String( pathStr);
 	
 	CoreApp::getInstance().onStartDownloadApk(path);	
-	CoreApp::getInstance().start();
+	
+	cubic_down_load* arg;
+	memset( &arg, 0, sizeof(arg) );
+	
+	env->GetJavaVM(&g_VM);
+	
+	arg->vm = g_VM;
+	arg->env = env;
+	arg->jcls = type;
+	
+	//jobject callback = ;
+
+	arg->jobj = env->NewGlobalRef(jcallback);
+	
+	//CoreApp::getInstance().initDownload(arg);
+	
+	
+	CoreApp::getInstance().start(arg);
 	
 	return env->NewStringUTF(path.c_str() );
+}
+
+void* Download(void* p) {
+
+	if(p == NULL) return NULL;
+  
+    JavaVM* vm = util.GetVM();
+	JNIEnv* env = util.GetJNIEnv(); 
+    
+    //强转回来
+    jobject jcallback = (jobject)p;
+    
+    //通过强转后的jcallback 获取到要回调的类
+    jclass javaClass = env->GetObjectClass(jcallback);
+
+    if (javaClass == 0) {
+        LOGE("Unable to find class");
+        vm->DetachCurrentThread();
+        return NULL;
+    }
+
+   //获取要回调的方法ID
+    jmethodID javaCallbackId = env->GetMethodID(javaClass, "downProgress","(DD)V");
+	
+    if (javaCallbackId == NULL) {
+        LOGE("Unable to find method:downProgress");
+        return NULL;
+    }
+	//执行回调
+    env->CallVoidMethod(jcallback, javaCallbackId,
+								CoreApp::getInstance().getNowSize(),
+								CoreApp::getInstance().getNowTotal());
+    
+    //释放当前线程
+	vm->DetachCurrentThread();
+    env = NULL;
+    
+    //释放你的全局引用的接口，生命周期自己把控
+    env->DeleteGlobalRef(jcallback);
+    jcallback = NULL;
+	return p;
 }
 
 void sendJavaMsg(JNIEnv* env, jobject instance, jmethodID func, const string msg) {
@@ -222,7 +351,7 @@ static JNINativeMethod methodsRx[] = {
 	{"register", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)I", (void*)meig_registerUser },
 	{"init","(Ljava/lang/Object;)I",(void*)meig_initAppInfo },
 	{"updateApp","(Ljava/lang/String;)I",(void*)meig_updateApp },
-	{"downApp","()Ljava/lang/String;",(void*)meig_downApp },
+	{"downApp","(Lcom/meigsmart/meigota/DownCallBack;)Ljava/lang/String;",(void*)meig_downApp },
 };
 
 static jint registerNativeMethods(JNIEnv* env, const char* className,JNINativeMethod* gMethods, int numMethods){
